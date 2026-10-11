@@ -1,0 +1,94 @@
+@import "tailwindcss";
+
+:root {
+  --background: #f8f8f5;
+  --foreground: #142a27;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background: var(--background);
+  color: var(--foreground);
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+#site-content {
+  display: flex;
+  flex: 1 0 auto;
+  flex-direction: column;
+}
+
+#site-content > * {
+  flex: 1 0 auto;
+  min-height: calc(100vh - 60px) !important;
+}
+
+.site-footer {
+  flex: 0 0 auto;
+  min-height: 60px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+.form-input {
+  width: 100%;
+  appearance: none;
+  border: 1px solid #cbd5d1;
+  border-radius: 10px;
+  background: #fff;
+  padding: 0.8rem 0.9rem;
+  font-size: 0.95rem;
+  color: #0f172a;
+  transition: all 0.2s ease;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+}
+
+.form-input::placeholder {
+  color: #64748b;
+}
+
+.form-input:focus {
+  outline: none;
+  border-color: rgba(23, 60, 92, 0.7);
+  box-shadow: 0 0 0 3px rgba(23, 60, 92, 0.12);
+  background: #fff;
+}
+
+button,
+a {
+  -webkit-tap-highlight-color: transparent;
+}
+
+button:focus-visible,
+a:focus-visible {
+  outline: 3px solid rgba(113, 140, 80, 0.55);
+  outline-offset: 3px;
+}
+
+select.form-input {
+  background-image:
+    linear-gradient(45deg, transparent 50%, #475569 50%),
+    linear-gradient(135deg, #475569 50%, transparent 50%),
+    linear-gradient(to right, transparent, transparent);
+  background-position:
+    calc(100% - 20px) calc(50% - 3px),
+    calc(100% - 14px) calc(50% - 3px),
+    100% 0;
+  background-size: 6px 6px, 6px 6px, 2.5em 2.5em;
+  background-repeat: no-repeat;
+  padding-right: 2.5rem;
+}

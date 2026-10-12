@@ -4,6 +4,8 @@ import { getDatabase } from "../../../lib/db";
 import { getSuperAdminActor } from "../../../lib/agent-auth";
 
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const accountStatuses = ["pending", "active", "suspended", "deactivated"] as const;
+type AccountStatus = (typeof accountStatuses)[number];
 
 async function writeActivity(actor: { userId: string; email: string }, action: string, targetEmail: string, details: Record<string, unknown> = {}) {
   const sql = getDatabase();
@@ -46,7 +48,9 @@ export async function GET() {
         id: user.id,
         name: [user.firstName, user.lastName].filter(Boolean).join(" ") || "Agent",
         email: user.primaryEmailAddress?.emailAddress ?? "",
-        active: (user.publicMetadata as { accountStatus?: unknown }).accountStatus !== "disabled",
+        status: accountStatuses.includes((user.publicMetadata as { accountStatus?: AccountStatus }).accountStatus as AccountStatus)
+          ? (user.publicMetadata as { accountStatus: AccountStatus }).accountStatus
+          : "pending",
         createdAt: user.createdAt,
         lastActiveAt: user.lastActiveAt,
       })),
@@ -83,7 +87,8 @@ export async function POST(request: Request) {
     const invitation = await client.invitations.createInvitation({
       emailAddress: email,
       redirectUrl: new URL("/admin", request.url).toString(),
-      publicMetadata: { role: "agent", accountStatus: "active" },
+      // Invited accounts remain blocked until the super admin approves them.
+      publicMetadata: { role: "agent", accountStatus: "pending" },
       notify: true,
     });
     await writeActivity(actor, "agent_invited", email, { invitationId: invitation.id });
@@ -102,9 +107,9 @@ export async function PATCH(request: Request) {
   }
 
   try {
-    const body = (await request.json()) as { userId?: unknown; active?: unknown };
-    if (typeof body.userId !== "string" || typeof body.active !== "boolean") {
-      return NextResponse.json({ error: "Agent and active status are required" }, { status: 400 });
+    const body = (await request.json()) as { userId?: unknown; status?: unknown };
+    if (typeof body.userId !== "string" || typeof body.status !== "string" || !accountStatuses.includes(body.status as AccountStatus)) {
+      return NextResponse.json({ error: "Agent and a valid account status are required" }, { status: 400 });
     }
     if (body.userId === actor.userId) {
       return NextResponse.json({ error: "You cannot change your own super admin access" }, { status: 400 });
@@ -117,11 +122,29 @@ export async function PATCH(request: Request) {
       return NextResponse.json({ error: "Agent account not found" }, { status: 404 });
     }
 
-    await client.users.updateUserMetadata(user.id, {
-      publicMetadata: { accountStatus: body.active ? "active" : "disabled" },
-    });
+    const oldStatus = (user.publicMetadata as { accountStatus?: string }).accountStatus ?? "pending";
+    const newStatus = body.status as AccountStatus;
+    await client.users.updateUserMetadata(user.id, { publicMetadata: { accountStatus: newStatus } });
     const email = user.primaryEmailAddress?.emailAddress ?? "";
-    await writeActivity(actor, body.active ? "agent_activated" : "agent_deactivated", email, { userId: user.id });
+    const action = newStatus === "active"
+      ? oldStatus === "pending" ? "agent_approved" : "agent_reactivated"
+      : newStatus === "suspended"
+        ? "agent_suspended"
+        : oldStatus === "pending" ? "agent_rejected" : "agent_deactivated";
+
+    // Revoke existing Clerk sessions on any blocked state. Authorization also
+    // checks the current status on every server request, so a revoke failure
+    // cannot preserve app access.
+    if (newStatus !== "active") {
+      const sessions = await client.sessions.getSessionList({ userId: user.id, status: "active", limit: 500 });
+      const revokeResults = await Promise.allSettled(
+        sessions.data.map((session) => client.sessions.revokeSession(session.id)),
+      );
+      if (revokeResults.some((result) => result.status === "rejected")) {
+        console.error("One or more agent sessions could not be revoked", { userId: user.id });
+      }
+    }
+    await writeActivity(actor, action, email, { userId: user.id, previousStatus: oldStatus, status: newStatus });
 
     return NextResponse.json({ ok: true });
   } catch (error) {

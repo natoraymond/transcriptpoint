@@ -6,7 +6,7 @@ type Agent = {
   id: string;
   name: string;
   email: string;
-  active: boolean;
+  status: "pending" | "active" | "suspended" | "deactivated";
   createdAt: number;
   lastActiveAt: number | null;
 };
@@ -30,8 +30,11 @@ function formatTimestamp(timestamp: number | string | null) {
 
 const activityLabels: Record<string, string> = {
   agent_invited: "Invited an agent",
-  agent_activated: "Reactivated an agent",
+  agent_approved: "Approved agent access",
+  agent_rejected: "Rejected agent access",
+  agent_suspended: "Suspended an agent",
   agent_deactivated: "Deactivated an agent",
+  agent_reactivated: "Reactivated an agent",
   agent_invitation_revoked: "Revoked an invitation",
   agent_login: "Signed in to the admin portal",
   section_viewed: "Viewed admin section",
@@ -103,7 +106,7 @@ export default function AgentsPage() {
     }
   };
 
-  const updateAgentStatus = async (agent: Agent) => {
+  const updateAgentStatus = async (agent: Agent, status: Agent["status"]) => {
     setPendingAction(agent.id);
     setError("");
     setNotice("");
@@ -111,11 +114,11 @@ export default function AgentsPage() {
       const response = await fetch("/api/admin/agents", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId: agent.id, active: !agent.active }),
+        body: JSON.stringify({ userId: agent.id, status }),
       });
       const result = (await response.json()) as { error?: string };
       if (!response.ok) throw new Error(result.error || "Unable to update this agent");
-      setNotice(`${agent.email} was ${agent.active ? "deactivated" : "reactivated"}.`);
+      setNotice(`${agent.email} is now ${status}.`);
       await loadData();
     } catch (actionError) {
       setError(actionError instanceof Error ? actionError.message : "Unable to update this agent");
@@ -177,8 +180,8 @@ export default function AgentsPage() {
 
         <section className="grid gap-4 sm:grid-cols-3">
           {[
-            { label: "Active agents", value: data.agents.filter((agent) => agent.active).length, tone: "text-emerald-700 bg-emerald-50" },
-            { label: "Inactive agents", value: data.agents.filter((agent) => !agent.active).length, tone: "text-slate-700 bg-slate-100" },
+            { label: "Active agents", value: data.agents.filter((agent) => agent.status === "active").length, tone: "text-emerald-700 bg-emerald-50" },
+            { label: "Pending approval", value: data.agents.filter((agent) => agent.status === "pending").length, tone: "text-amber-700 bg-amber-50" },
             { label: "Pending invitations", value: data.invitations.length, tone: "text-amber-700 bg-amber-50" },
           ].map((stat) => (
             <article key={stat.label} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
@@ -203,10 +206,18 @@ export default function AgentsPage() {
                 {data.agents.map((agent) => (
                   <tr key={agent.id}>
                     <td className="px-5 py-4"><p className="font-semibold text-slate-900">{agent.name}</p><p className="mt-1 text-xs text-slate-500">{agent.email}</p></td>
-                    <td className="px-5 py-4"><span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${agent.active ? "bg-emerald-50 text-emerald-700" : "bg-slate-100 text-slate-600"}`}>{agent.active ? "Active" : "Deactivated"}</span></td>
+                    <td className="px-5 py-4"><span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${agent.status === "active" ? "bg-emerald-50 text-emerald-700" : agent.status === "pending" ? "bg-amber-50 text-amber-700" : agent.status === "suspended" ? "bg-orange-50 text-orange-700" : "bg-slate-100 text-slate-600"}`}>{agent.status[0].toUpperCase() + agent.status.slice(1)}</span></td>
                     <td className="whitespace-nowrap px-5 py-4 text-xs text-slate-500">{formatTimestamp(agent.createdAt)}</td>
                     <td className="whitespace-nowrap px-5 py-4 text-xs text-slate-500">{formatTimestamp(agent.lastActiveAt)}</td>
-                    <td className="px-5 py-4 text-right"><button type="button" disabled={pendingAction === agent.id} onClick={() => void updateAgentStatus(agent)} className={`text-xs font-semibold disabled:opacity-50 ${agent.active ? "text-red-700 hover:text-red-900" : "text-blue-700 hover:text-blue-900"}`}>{pendingAction === agent.id ? "Saving…" : agent.active ? "Deactivate" : "Reactivate"}</button></td>
+                    <td className="px-5 py-4 text-right">
+                      <div className="flex flex-wrap justify-end gap-x-3 gap-y-2">
+                        {agent.status === "pending" && <button type="button" disabled={pendingAction === agent.id} onClick={() => void updateAgentStatus(agent, "active")} className="text-xs font-semibold text-emerald-700 hover:text-emerald-900 disabled:opacity-50">Approve</button>}
+                        {agent.status === "active" && <button type="button" disabled={pendingAction === agent.id} onClick={() => void updateAgentStatus(agent, "suspended")} className="text-xs font-semibold text-orange-700 hover:text-orange-900 disabled:opacity-50">Suspend</button>}
+                        {agent.status !== "deactivated" && <button type="button" disabled={pendingAction === agent.id} onClick={() => void updateAgentStatus(agent, "deactivated")} className="text-xs font-semibold text-red-700 hover:text-red-900 disabled:opacity-50">{agent.status === "pending" ? "Reject" : "Deactivate"}</button>}
+                        {(agent.status === "suspended" || agent.status === "deactivated") && <button type="button" disabled={pendingAction === agent.id} onClick={() => void updateAgentStatus(agent, "active")} className="text-xs font-semibold text-blue-700 hover:text-blue-900 disabled:opacity-50">Reactivate</button>}
+                        {pendingAction === agent.id && <span className="text-xs text-slate-400">Saving…</span>}
+                      </div>
+                    </td>
                   </tr>
                 ))}
                 {!isLoading && data.agents.length === 0 && <tr><td colSpan={5} className="px-5 py-10 text-center text-sm text-slate-500">No agents yet. Invite your first teammate above.</td></tr>}

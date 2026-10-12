@@ -6,7 +6,8 @@ export default async function AdminLayout({ children }: { children: ReactNode })
   const actor = await getAgentActor();
 
   if (!actor) redirect("/sign-in");
-  if (!actor.isSuperAdmin && !actor.isAgent) {
+  if (actor.isAgent && !actor.isSuperAdmin) redirect("/agent");
+  if (!actor.isSuperAdmin) {
     return (
       <main className="flex min-h-screen items-center justify-center bg-slate-100 px-5">
         <section className="max-w-md rounded-3xl border border-slate-200 bg-white p-8 text-center shadow-xl">

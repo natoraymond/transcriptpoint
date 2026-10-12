@@ -68,9 +68,14 @@ function LandingPage({ onGetStarted }: { onGetStarted: () => void }) {
           <Link href="/assistant" className="text-sm font-medium text-[#536661] transition hover:text-[#173d35]">Help &amp; support</Link>
         </nav>
 
-        <button type="button" onClick={onGetStarted} className="inline-flex items-center gap-2 rounded-full bg-[#173d35] px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-[#173d35]/15 transition hover:-translate-y-0.5 hover:bg-[#245246]">
-          Get started <span aria-hidden="true">↗</span>
-        </button>
+        <div className="flex items-center gap-2 sm:gap-3">
+          <Link href="/admin" aria-label="Open admin dashboard" className="rounded-full px-3 py-2.5 text-sm font-semibold text-[#536661] transition hover:bg-[#edf2e8] hover:text-[#173d35] sm:px-4">
+            Admin
+          </Link>
+          <button type="button" onClick={onGetStarted} className="inline-flex items-center gap-2 rounded-full bg-[#173d35] px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-[#173d35]/15 transition hover:-translate-y-0.5 hover:bg-[#245246] sm:px-5">
+            Get started <span aria-hidden="true">↗</span>
+          </button>
+        </div>
       </header>
 
       <main id="home">

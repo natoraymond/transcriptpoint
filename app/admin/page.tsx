@@ -1,9 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useUser } from "@clerk/nextjs";
 import { useEffect, useState } from "react";
-import AgentAccessModal from "./components/agent-access-modal";
 
 const navigationItems = [
   "Overview",
@@ -46,14 +44,10 @@ const formatDate = (value: string) => {
 export default function AdminDashboardPage() {
   const [activeSection, setActiveSection] = useState<NavItem>("Overview");
   const [isSupportOpen, setIsSupportOpen] = useState(false);
-  const [isAgentAccessOpen, setIsAgentAccessOpen] = useState(false);
   const [dashboard, setDashboard] = useState<DashboardData | null>(null);
   const [dashboardError, setDashboardError] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [updatingRequest, setUpdatingRequest] = useState("");
-  const { isLoaded: isUserLoaded, user } = useUser();
-  const isAgent = user?.publicMetadata.role === "agent";
-
   useEffect(() => {
     let isMounted = true;
     const loadDashboard = async () => {
@@ -103,26 +97,6 @@ export default function AdminDashboardPage() {
     `${request.id} ${request.student} ${request.campus} ${request.institution ?? ""} ${request.transcriptType ?? ""} ${request.status}`
       .toLowerCase().includes(searchQuery.trim().toLowerCase()),
   );
-
-  useEffect(() => {
-    if (!isUserLoaded || !isAgent) return;
-
-    void fetch("/api/admin/activity", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action: "agent_login" }),
-    }).catch(() => undefined);
-  }, [isAgent, isUserLoaded]);
-
-  useEffect(() => {
-    if (!isUserLoaded || !isAgent) return;
-
-    void fetch("/api/admin/activity", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action: "section_viewed", section: activeSection }),
-    }).catch(() => undefined);
-  }, [activeSection, isAgent, isUserLoaded]);
 
   useEffect(() => {
     if (!isSupportOpen) return;
@@ -217,7 +191,7 @@ export default function AdminDashboardPage() {
         );
       case "Settings":
         return (
-          <section className="mt-6 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm"><h3 className="text-lg font-semibold">Platform access</h3><p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">Only the configured Super Admin can grant or revoke agent access. Account status and invitation controls are audited.</p><button type="button" onClick={() => setIsAgentAccessOpen(true)} className="mt-5 rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white hover:bg-slate-700">Manage agents</button></section>
+          <section className="mt-6 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm"><h3 className="text-lg font-semibold">Platform settings</h3><p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">Administrative controls for the TranscriptPoint platform will appear here.</p></section>
         );
       case "Overview":
       default:
@@ -366,7 +340,6 @@ export default function AdminDashboardPage() {
                   <div className="mt-4 space-y-3">
                     <button type="button" onClick={() => setActiveSection("Requests")} className="flex w-full items-start gap-3 rounded-2xl bg-white p-3 text-left shadow-sm hover:bg-blue-50"><span className="mt-1 h-2.5 w-2.5 rounded-full bg-blue-600" /><span><span className="block font-medium text-slate-800">Requests awaiting review</span><span className="mt-1 block text-sm text-slate-500">{dashboard?.stats.pendingRequests ?? 0} request(s)</span></span></button>
                     <button type="button" onClick={() => setActiveSection("Payments")} className="flex w-full items-start gap-3 rounded-2xl bg-white p-3 text-left shadow-sm hover:bg-blue-50"><span className="mt-1 h-2.5 w-2.5 rounded-full bg-emerald-600" /><span><span className="block font-medium text-slate-800">Payment reconciliation</span><span className="mt-1 block text-sm text-slate-500">{dashboard?.payments.length ?? 0} payment record(s)</span></span></button>
-                    <button type="button" onClick={() => setIsAgentAccessOpen(true)} className="flex w-full items-start gap-3 rounded-2xl bg-white p-3 text-left shadow-sm hover:bg-blue-50"><span className="mt-1 h-2.5 w-2.5 rounded-full bg-cyan-600" /><span><span className="block font-medium text-slate-800">Agent access</span><span className="mt-1 block text-sm text-slate-500">Invite, approve, suspend, or deactivate</span></span></button>
                   </div>
                 </section>
 
@@ -432,21 +405,6 @@ export default function AdminDashboardPage() {
               </button>
             ))}
           </nav>
-
-          <button
-            type="button"
-            onClick={() => setIsAgentAccessOpen(true)}
-            className="mt-5 flex w-full items-center justify-between rounded-2xl px-3 py-3 text-sm text-slate-300 transition hover:bg-white/5 hover:text-white"
-          >
-            <span className="flex items-center gap-3">
-              <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5 text-cyan-300" aria-hidden="true">
-                <circle cx="9" cy="8" r="3.25" stroke="currentColor" strokeWidth="1.7" />
-                <path d="M3.5 19v-1.25A4.75 4.75 0 0 1 8.25 13h1.5a4.75 4.75 0 0 1 4.75 4.75V19M17 8v6M14 11h6" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
-              </svg>
-              Agent access
-            </span>
-            <span className="rounded-full bg-cyan-400/10 px-2 py-0.5 text-[10px] font-semibold text-cyan-200">Team</span>
-          </button>
 
           <button
             type="button"
@@ -580,7 +538,6 @@ export default function AdminDashboardPage() {
           </section>
         </div>
       )}
-      {isAgentAccessOpen && <AgentAccessModal onClose={() => setIsAgentAccessOpen(false)} />}
     </div>
   );
 }

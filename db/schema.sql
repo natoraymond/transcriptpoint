@@ -187,6 +187,22 @@ ON CONFLICT (country_code, state_name) DO UPDATE
       country_name = EXCLUDED.country_name,
       updated_at = NOW();
 
+UPDATE dhl_delivery_rates
+SET price_kobo = CASE
+      WHEN country_code <> 'NG' THEN 6800000
+      WHEN state_name IN ('Lagos', 'Federal Capital Territory (Abuja)') THEN 3000000
+      ELSE NULL
+    END,
+    updated_at = NOW();
+
+UPDATE transcript_options
+SET is_active = value NOT IN (
+      'official-softcopy',
+      'students-official-softcopy-outside-nigeria',
+      'english-proficiency'
+    ),
+    updated_at = NOW();
+
 CREATE TABLE IF NOT EXISTS assistant_conversations (
   id UUID PRIMARY KEY,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),

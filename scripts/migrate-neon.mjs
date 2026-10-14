@@ -63,7 +63,12 @@ for (const country of Country.getAllCountries()) {
     )))]
     : [`All of ${country.name}`];
   for (const stateName of stateNames) {
-    destinations.push([continent, country.isoCode, country.name, stateName]);
+    const priceKobo = country.isoCode !== "NG"
+      ? 6800000
+      : ["Lagos", "Federal Capital Territory (Abuja)"].includes(stateName)
+        ? 3000000
+        : null;
+    destinations.push([continent, country.isoCode, country.name, stateName, priceKobo]);
   }
 }
 
@@ -71,14 +76,15 @@ for (let offset = 0; offset < destinations.length; offset += 100) {
   const batch = destinations.slice(offset, offset + 100);
   const parameters = batch.flat();
   const values = batch.map((_, index) => {
-    const parameter = index * 4;
-    return `($${parameter + 1}, $${parameter + 2}, $${parameter + 3}, $${parameter + 4}, NULL)`;
+    const parameter = index * 5;
+    return `($${parameter + 1}, $${parameter + 2}, $${parameter + 3}, $${parameter + 4}, $${parameter + 5})`;
   });
   await sql.query(
     `INSERT INTO dhl_delivery_rates (continent, country_code, country_name, state_name, price_kobo)
      VALUES ${values.join(", ")}
      ON CONFLICT (country_code, state_name) DO UPDATE
-     SET continent = EXCLUDED.continent, country_name = EXCLUDED.country_name, updated_at = NOW()`,
+     SET continent = EXCLUDED.continent, country_name = EXCLUDED.country_name,
+         price_kobo = EXCLUDED.price_kobo, updated_at = NOW()`,
     parameters,
   );
 }
@@ -94,12 +100,16 @@ const [{ rateCount }] = await sql.query(
   "SELECT COUNT(*)::int AS \"rateCount\" FROM dhl_delivery_rates",
 );
 const rates = await sql.query(
-  "SELECT state_name AS \"stateName\", price_kobo AS \"priceKobo\" FROM dhl_delivery_rates WHERE country_code = 'NG' AND state_name IN ('Lagos', 'Enugu', 'Federal Capital Territory (Abuja)') ORDER BY state_name",
+  "SELECT country_code AS \"countryCode\", country_name AS \"countryName\", state_name AS \"stateName\", price_kobo AS \"priceKobo\" FROM dhl_delivery_rates WHERE (country_code = 'NG' AND state_name IN ('Lagos', 'Enugu', 'Federal Capital Territory (Abuja)')) OR (country_code = 'US' AND state_name = 'California') ORDER BY country_code, state_name",
+);
+const activeFormats = await sql.query(
+  "SELECT label FROM transcript_options WHERE is_active = TRUE ORDER BY display_order, label",
 );
 
 console.log(`Verified Neon table: ${tableName}`);
 console.log(`Verified DHL destinations and states: ${rateCount}`);
 console.log(`Loaded DHL destination catalog rows: ${destinations.length}`);
-console.log(
-  rates.map(({ stateName, priceKobo }) => `${stateName}: N${(priceKobo / 100).toLocaleString("en-NG")}`).join(", "),
-);
+console.log(`Verified active transcript formats: ${activeFormats.map(({ label }) => label).join(", ")}`);
+console.log(`Verified DHL rates: ${rates.map(({ countryName, stateName, priceKobo }) => (
+  `${countryName} — ${stateName}: ${priceKobo === null ? "not configured" : `N${(priceKobo / 100).toLocaleString("en-NG")}`}`
+)).join("; ")}`);

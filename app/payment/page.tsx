@@ -40,6 +40,7 @@ export default function PaymentPage() {
   );
   const request = parseRequest(requestSnapshotValue);
   const [paymentStatus, setPaymentStatus] = useState("");
+  const [showPaymentConfirmation, setShowPaymentConfirmation] = useState(false);
   const [pendingReference, setPendingReference] = useState("");
   const [isConfirmingPayment, setIsConfirmingPayment] = useState(false);
   const [transcriptOptions, setTranscriptOptions] = useState<TranscriptOption[]>([]);
@@ -110,8 +111,10 @@ export default function PaymentPage() {
 
     const publicKey = process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY;
 
-    if (!publicKey) {
-      setPaymentStatus("Payment is not configured yet. Add NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY to your environment.");
+    if (!publicKey || !/^pk_(test|live)_[A-Za-z0-9]+$/.test(publicKey.trim())) {
+      setPaymentStatus(
+        "Paystack is not configured with a valid public key. Set NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY to the pk_test_… or pk_live_… key from your Paystack dashboard, then restart the app.",
+      );
       return;
     }
 
@@ -119,7 +122,7 @@ export default function PaymentPage() {
       const { default: Paystack } = await import("@paystack/inline-js");
       const paystack = new Paystack();
       await paystack.checkout({
-        key: publicKey,
+        key: publicKey.trim(),
         email: request.email,
         amount: transcriptOption.amount * 100,
         currency: "NGN",
@@ -158,7 +161,7 @@ export default function PaymentPage() {
             Payment
           </p>
           <h1 className="mt-2 text-3xl font-semibold tracking-tight text-slate-900">
-            Complete your payment
+            University of Nigeria Nsukka
           </h1>
         </div>
 
@@ -211,7 +214,7 @@ export default function PaymentPage() {
 
           <button
             type="button"
-            onClick={handlePayment}
+            onClick={() => setShowPaymentConfirmation(true)}
             disabled={isConfirmingPayment}
             className="inline-flex items-center justify-center rounded-xl bg-[#173c5c] px-6 py-3 text-sm font-semibold text-white shadow-[0_12px_24px_rgba(23,60,92,0.25)] transition hover:bg-[#12314a]"
           >
@@ -219,6 +222,59 @@ export default function PaymentPage() {
           </button>
         </div>
       </div>
+
+      {showPaymentConfirmation && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 px-4 py-6"
+          onClick={() => setShowPaymentConfirmation(false)}
+        >
+          <section
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="payment-confirmation-title"
+            className="w-full max-w-md rounded-3xl border border-slate-200 bg-white p-6 shadow-2xl sm:p-8"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
+              Review your order
+            </p>
+            <h2 id="payment-confirmation-title" className="mt-2 text-2xl font-semibold text-slate-900">
+              Confirm payment
+            </h2>
+            <p className="mt-4 text-sm leading-6 text-slate-600">
+              You have added a total of 1 request to your cart.
+            </p>
+            <div className="mt-4 flex items-center justify-between rounded-2xl bg-slate-50 px-4 py-4">
+              <span className="text-sm text-slate-600">Your total bill</span>
+              <span className="text-lg font-semibold text-slate-900">
+                {formatNaira(transcriptOption.amount)}
+              </span>
+            </div>
+            <p className="mt-5 text-sm text-slate-700">
+              Do you wish to proceed with payment?
+            </p>
+            <div className="mt-7 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+              <button
+                type="button"
+                onClick={() => setShowPaymentConfirmation(false)}
+                className="inline-flex items-center justify-center rounded-xl border border-slate-300 px-5 py-3 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowPaymentConfirmation(false);
+                  void handlePayment();
+                }}
+                className="inline-flex items-center justify-center rounded-xl bg-[#173c5c] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#12314a]"
+              >
+                Confirm and pay
+              </button>
+            </div>
+          </section>
+        </div>
+      )}
     </div>
   );
 }

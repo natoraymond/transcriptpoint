@@ -1,13 +1,9 @@
 import { NextResponse } from "next/server";
-import { getSuperAdminActor } from "../../../lib/agent-auth";
 import { getDatabase } from "../../../lib/db";
 
 export const dynamic = "force-dynamic";
 
 export async function GET() {
-  const actor = await getSuperAdminActor();
-  if (!actor) return NextResponse.json({ error: "Super admin access required" }, { status: 403 });
-
   try {
     const sql = getDatabase();
     const [statsRows, requestRows, paymentRows, monthlyRows, serviceRows] = await Promise.all([

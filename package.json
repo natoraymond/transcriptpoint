@@ -10,7 +10,6 @@
     "db:migrate": "node scripts/migrate-neon.mjs"
   },
   "dependencies": {
-    "@clerk/nextjs": "^7.9.14",
     "@neondatabase/serverless": "^1.1.0",
     "@paystack/inline-js": "^2.25.0",
     "country-state-city": "^3.2.1",

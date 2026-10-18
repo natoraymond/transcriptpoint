@@ -220,21 +220,3 @@ CREATE TABLE IF NOT EXISTS assistant_messages (
 CREATE INDEX IF NOT EXISTS assistant_messages_conversation_idx
   ON assistant_messages (conversation_id, created_at);
 
-CREATE TABLE IF NOT EXISTS agent_activity (
-  id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-  actor_user_id TEXT NOT NULL,
-  actor_email TEXT NOT NULL,
-  action TEXT NOT NULL,
-  target_email TEXT,
-  details JSONB NOT NULL DEFAULT '{}'::jsonb,
-  session_id TEXT,
-  section TEXT NOT NULL DEFAULT '',
-  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  CONSTRAINT agent_activity_session_action_section_unique UNIQUE (session_id, action, section)
-);
-
-CREATE INDEX IF NOT EXISTS agent_activity_created_at_idx
-  ON agent_activity (created_at DESC);
-
-CREATE INDEX IF NOT EXISTS agent_activity_actor_created_at_idx
-  ON agent_activity (actor_user_id, created_at DESC);

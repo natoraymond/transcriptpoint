@@ -38,9 +38,7 @@ Add `OPENAI_API_KEY` to `.env.local` and optionally set `OPENAI_MODEL`. Then run
 
 ## Admin agent accounts
 
-Admin sign-in and agent invitations use Clerk. Initialize or link the Clerk app with `npx clerk@latest init`, then pull its development environment values with `npx clerk env pull` (or set `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` and `CLERK_SECRET_KEY` from the Clerk dashboard). Set `TRANSCRIPTPOINT_SUPER_ADMIN_EMAIL` to the exact primary sign-in email of the super admin. Keep `CLERK_SECRET_KEY` server-side.
-
-The `/admin` area requires an authenticated super admin or agent. Only the super-admin email can open `/admin/agents`, invite agents, deactivate/reactivate accounts, or revoke pending invitations. Invited users receive the `agent` role through Clerk invitation metadata. Agent sign-ins and visited admin sections, along with account-management events, are written to the `agent_activity` audit table. Run `npm run db:migrate` after pulling this change to create that table.
+The `/admin` dashboard is currently available without sign-in. Its dashboard API returns applicant and payment records, and its request-status API allows changing request statuses. Do not deploy this configuration on a public site with real data unless access controls are added at the hosting or network layer.
 
 You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
 

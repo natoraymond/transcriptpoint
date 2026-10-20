@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { Resend } from "resend";
+import { checkSameOrigin, getCurrentUser } from "../../../lib/auth";
 import { getDatabase } from "../../../lib/db";
 import { formatNaira } from "../../../lib/transcript-options";
 
@@ -38,6 +39,7 @@ function receiptHtml(request: Record<string, unknown>, service: string, amount: 
 }
 
 export async function POST(request: Request) {
+  if (!checkSameOrigin(request)) return NextResponse.json({ error: "Invalid request origin" }, { status: 403 });
   let body: { requestId?: unknown; reference?: unknown };
   try {
     body = await request.json();
@@ -67,7 +69,7 @@ export async function POST(request: Request) {
         month_of_graduation AS "monthOfGraduation", year_of_graduation AS "yearOfGraduation",
         recipient_institution AS "recipientInstitution", delivery_method AS "deliveryMethod",
         payment_status AS "paymentStatus", payment_reference AS "paymentReference",
-        payment_email_sent_at AS "paymentEmailSentAt"
+        payment_email_sent_at AS "paymentEmailSentAt", user_id AS "userId"
       FROM transcript_requests
       WHERE id = ${requestId}
       LIMIT 1
@@ -75,6 +77,10 @@ export async function POST(request: Request) {
 
     if (!savedRequest) {
       return NextResponse.json({ error: "Transcript request not found" }, { status: 404 });
+    }
+    const currentUser = await getCurrentUser();
+    if (!currentUser || (savedRequest.userId && currentUser.id !== String(savedRequest.userId)) || currentUser.email !== String(savedRequest.email).toLowerCase()) {
+      return NextResponse.json({ error: "Sign in with the account used to submit this request before confirming payment" }, { status: 403 });
     }
 
     const [transcriptOption] = await sql`
@@ -119,7 +125,8 @@ export async function POST(request: Request) {
 
     await sql`
       UPDATE transcript_requests
-      SET payment_status = 'paid', payment_reference = ${reference}, updated_at = NOW()
+        SET payment_status = 'paid', payment_reference = ${reference},
+          user_id = COALESCE(user_id, ${currentUser.id}), updated_at = NOW()
       WHERE id = ${requestId}
     `;
 

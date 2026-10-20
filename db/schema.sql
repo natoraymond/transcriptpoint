@@ -11,6 +11,71 @@ CREATE TABLE IF NOT EXISTS transcript_options (
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
+CREATE TABLE IF NOT EXISTS portal_users (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  email TEXT NOT NULL UNIQUE,
+  password_hash TEXT NOT NULL,
+  full_name TEXT NOT NULL,
+  phone_number TEXT NOT NULL DEFAULT '',
+  role TEXT NOT NULL DEFAULT 'user' CHECK (role IN ('user', 'admin', 'super_admin')),
+  permissions JSONB NOT NULL DEFAULT '[]'::jsonb CHECK (jsonb_typeof(permissions) = 'array'),
+  is_active BOOLEAN NOT NULL DEFAULT TRUE,
+  email_verified_at TIMESTAMPTZ,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS portal_settings (
+  id BOOLEAN PRIMARY KEY DEFAULT TRUE CHECK (id = TRUE),
+  initial_super_admin_created_at TIMESTAMPTZ,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+INSERT INTO portal_settings (id) VALUES (TRUE) ON CONFLICT (id) DO NOTHING;
+
+ALTER TABLE portal_users
+  ADD COLUMN IF NOT EXISTS email_verified_at TIMESTAMPTZ;
+
+CREATE TABLE IF NOT EXISTS portal_sessions (
+  token_hash TEXT PRIMARY KEY,
+  user_id UUID NOT NULL REFERENCES portal_users(id) ON DELETE CASCADE,
+  expires_at TIMESTAMPTZ NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  last_seen_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS portal_email_verification_tokens (
+  token_hash TEXT PRIMARY KEY,
+  user_id UUID NOT NULL REFERENCES portal_users(id) ON DELETE CASCADE,
+  purpose TEXT NOT NULL DEFAULT 'verify' CHECK (purpose IN ('verify', 'setup')),
+  expires_at TIMESTAMPTZ NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+ALTER TABLE portal_email_verification_tokens
+  ADD COLUMN IF NOT EXISTS purpose TEXT NOT NULL DEFAULT 'verify';
+
+CREATE TABLE IF NOT EXISTS portal_login_attempts (
+  attempt_key TEXT PRIMARY KEY,
+  attempts INTEGER NOT NULL DEFAULT 0,
+  window_started_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  blocked_until TIMESTAMPTZ
+);
+
+CREATE INDEX IF NOT EXISTS portal_sessions_user_idx ON portal_sessions (user_id);
+CREATE INDEX IF NOT EXISTS portal_sessions_expiry_idx ON portal_sessions (expires_at);
+
+CREATE TABLE IF NOT EXISTS portal_activity (
+  id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  user_id UUID NOT NULL REFERENCES portal_users(id) ON DELETE CASCADE,
+  action TEXT NOT NULL,
+  details JSONB NOT NULL DEFAULT '{}'::jsonb,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS portal_activity_user_created_idx ON portal_activity (user_id, created_at DESC);
+
 ALTER TABLE transcript_options
   ADD COLUMN IF NOT EXISTS requires_dhl BOOLEAN NOT NULL DEFAULT FALSE;
 
@@ -67,6 +132,12 @@ CREATE TABLE IF NOT EXISTS transcript_requests (
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+
+ALTER TABLE transcript_requests
+  ADD COLUMN IF NOT EXISTS user_id UUID REFERENCES portal_users(id) ON DELETE SET NULL;
+
+CREATE INDEX IF NOT EXISTS transcript_requests_user_created_idx
+  ON transcript_requests (user_id, created_at DESC);
 
 ALTER TABLE transcript_requests
   ADD COLUMN IF NOT EXISTS status TEXT NOT NULL DEFAULT 'pending';
@@ -205,9 +276,13 @@ SET is_active = value NOT IN (
 
 CREATE TABLE IF NOT EXISTS assistant_conversations (
   id UUID PRIMARY KEY,
+  user_id UUID REFERENCES portal_users(id) ON DELETE CASCADE,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+
+ALTER TABLE assistant_conversations
+  ADD COLUMN IF NOT EXISTS user_id UUID REFERENCES portal_users(id) ON DELETE CASCADE;
 
 CREATE TABLE IF NOT EXISTS assistant_messages (
   id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,

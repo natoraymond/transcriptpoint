@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { requireUser } from "../../lib/auth";
 import { getDatabase } from "../../lib/db";
 
 type ChatMessage = {
@@ -29,6 +30,9 @@ async function getConversationMessages(conversationId: string) {
 }
 
 export async function POST(request: Request) {
+  const access = await requireUser();
+  if (!access.user) return access.response;
+
   try {
     const body = (await request.json()) as AssistantRequest;
     const message = body.message?.trim();
@@ -49,15 +53,22 @@ export async function POST(request: Request) {
       );
     }
 
-    const conversationId = body.conversationId && isUuid(body.conversationId)
-      ? body.conversationId
-      : crypto.randomUUID();
     const sql = getDatabase();
+    let conversationId = crypto.randomUUID();
+    if (body.conversationId && isUuid(body.conversationId)) {
+      const [ownedConversation] = await sql`
+        SELECT id FROM assistant_conversations
+        WHERE id = ${body.conversationId} AND user_id = ${access.user.id}
+        LIMIT 1
+      `;
+      if (ownedConversation) conversationId = body.conversationId;
+    }
 
     await sql`
-      INSERT INTO assistant_conversations (id)
-      VALUES (${conversationId})
+      INSERT INTO assistant_conversations (id, user_id)
+      VALUES (${conversationId}, ${access.user.id})
       ON CONFLICT (id) DO UPDATE SET updated_at = NOW()
+      WHERE assistant_conversations.user_id = EXCLUDED.user_id
     `;
     await sql`
       INSERT INTO assistant_messages (conversation_id, role, content)

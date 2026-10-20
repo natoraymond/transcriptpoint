@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { checkSameOrigin, getCurrentUser, recordActivity } from "../../lib/auth";
 import { getDatabase } from "../../lib/db";
 
 const requiredFields = [
@@ -89,8 +90,13 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
+  if (!checkSameOrigin(request)) return NextResponse.json({ error: "Invalid request origin" }, { status: 403 });
   try {
     const body = (await request.json()) as Partial<TranscriptRequest>;
+    const currentUser = await getCurrentUser();
+    if (!currentUser) {
+      return NextResponse.json({ error: "Sign in or create an account before submitting a transcript request" }, { status: 401 });
+    }
     const missingField = requiredFields.find(
       (field) => typeof body[field] !== "string" || !body[field]?.trim(),
     );
@@ -169,6 +175,7 @@ export async function POST(request: Request) {
 
     const [savedRequest] = await sql`
       INSERT INTO transcript_requests (
+        user_id,
         campus,
         transcript_format,
         mode_of_admission,
@@ -193,6 +200,7 @@ export async function POST(request: Request) {
         reference_number,
         receiver_email
       ) VALUES (
+        ${currentUser.id},
         ${body.campus!.trim()},
         ${body.transcriptFormat!.trim()},
         ${body.modeOfAdmission!.trim()},
@@ -219,6 +227,8 @@ export async function POST(request: Request) {
       )
       RETURNING id
     `;
+
+    await recordActivity(currentUser.id, "transcript_request_submitted", { requestId: String(savedRequest.id) });
 
     return NextResponse.json({ id: savedRequest.id }, { status: 201 });
   } catch (error) {

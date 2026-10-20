@@ -1,0 +1,68 @@
+"use client";
+
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useState, type FormEvent } from "react";
+
+type Props = { fullName: string; role: string; dashboardHref: string };
+
+export default function AccountControls({ fullName, role, dashboardHref }: Props) {
+  const router = useRouter();
+  const [isSigningOut, setIsSigningOut] = useState(false);
+  const [isPasswordDialogOpen, setIsPasswordDialogOpen] = useState(false);
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [passwordError, setPasswordError] = useState("");
+  const [passwordNotice, setPasswordNotice] = useState("");
+  const [isChangingPassword, setIsChangingPassword] = useState(false);
+  const signOut = async () => {
+    setIsSigningOut(true);
+    try {
+      await fetch("/api/auth/logout", { method: "POST" });
+    } finally {
+      router.push("/sign-in");
+      router.refresh();
+    }
+  };
+
+  const changePassword = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setPasswordError("");
+    setPasswordNotice("");
+    if (newPassword !== confirmPassword) {
+      setPasswordError("The new passwords do not match.");
+      return;
+    }
+    setIsChangingPassword(true);
+    try {
+      const response = await fetch("/api/auth/password", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ currentPassword, newPassword }),
+      });
+      const result = await response.json() as { error?: string; message?: string };
+      if (!response.ok) throw new Error(result.error || "Unable to change password");
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
+      setPasswordNotice(result.message || "Password changed successfully.");
+    } catch (error) {
+      setPasswordError(error instanceof Error ? error.message : "Unable to change password");
+    } finally {
+      setIsChangingPassword(false);
+    }
+  };
+
+  return (
+    <div className="flex items-center gap-3">
+      <Link href={dashboardHref} className="min-w-0 text-right">
+        <span className="block truncate text-sm font-semibold text-slate-800">{fullName}</span>
+        <span className="block text-[10px] uppercase tracking-[.16em] text-slate-500">{role.replaceAll("_", " ")}</span>
+      </Link>
+      <button type="button" onClick={() => void signOut()} disabled={isSigningOut} className="rounded-xl border border-slate-300 px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50">{isSigningOut ? "Signing out…" : "Sign out"}</button>
+      <button type="button" onClick={() => { setIsPasswordDialogOpen(true); setPasswordError(""); setPasswordNotice(""); }} className="rounded-xl border border-slate-300 px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50">Change password</button>
+      {isPasswordDialogOpen && <div className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-950/50 p-4" onClick={(event) => { if (event.target === event.currentTarget) setIsPasswordDialogOpen(false); }}><section role="dialog" aria-modal="true" aria-labelledby="change-password-title" className="w-full max-w-md rounded-3xl bg-white p-6 shadow-2xl"><div className="flex items-start justify-between gap-3"><div><h2 id="change-password-title" className="text-xl font-semibold text-slate-950">Change password</h2><p className="mt-1 text-sm text-slate-500">Choose a new password with at least 9 characters.</p></div><button type="button" aria-label="Close password dialog" onClick={() => setIsPasswordDialogOpen(false)} className="rounded-lg px-2 py-1 text-slate-500 hover:bg-slate-100">✕</button></div><form onSubmit={changePassword} className="mt-5 space-y-4"><label className="block text-sm font-medium text-slate-700">Current password<input type="password" autoComplete="current-password" className="form-input mt-2" value={currentPassword} onChange={(event) => setCurrentPassword(event.target.value)} required /></label><label className="block text-sm font-medium text-slate-700">New password<input type="password" autoComplete="new-password" minLength={9} maxLength={200} className="form-input mt-2" value={newPassword} onChange={(event) => setNewPassword(event.target.value)} required /></label><label className="block text-sm font-medium text-slate-700">Confirm new password<input type="password" autoComplete="new-password" minLength={9} maxLength={200} className="form-input mt-2" value={confirmPassword} onChange={(event) => setConfirmPassword(event.target.value)} required /></label>{passwordError && <p role="alert" className="rounded-lg bg-red-50 p-3 text-sm text-red-700">{passwordError}</p>}{passwordNotice && <p role="status" className="rounded-lg bg-emerald-50 p-3 text-sm text-emerald-700">{passwordNotice}</p>}<button type="submit" disabled={isChangingPassword} className="w-full rounded-xl bg-[#173c5c] px-4 py-3 text-sm font-semibold text-white disabled:opacity-50">{isChangingPassword ? "Changing…" : "Update password"}</button></form></section></div>}
+    </div>
+  );
+}

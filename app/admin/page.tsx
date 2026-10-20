@@ -9,6 +9,7 @@ const navigationItems = [
   "Students",
   "Institutions",
   "Payments",
+  "Users",
   "Reports",
   "Settings",
 ] as const;
@@ -31,6 +32,7 @@ const sectionMeta: Record<NavItem, { heading: string; subheading: string }> = {
   Students: { heading: "Students", subheading: "Student records" },
   Institutions: { heading: "Institutions", subheading: "Partner institutions" },
   Payments: { heading: "Payments", subheading: "Transaction overview" },
+  Users: { heading: "Users", subheading: "User directory" },
   Reports: { heading: "Reports", subheading: "Performance and analytics" },
   Settings: { heading: "Settings", subheading: "Administrative controls" },
 };
@@ -48,8 +50,19 @@ export default function AdminDashboardPage() {
   const [dashboardError, setDashboardError] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [updatingRequest, setUpdatingRequest] = useState("");
+  const [currentRole, setCurrentRole] = useState("admin");
+  const [permissions, setPermissions] = useState<string[]>([]);
   useEffect(() => {
     let isMounted = true;
+    fetch("/api/auth/me", { cache: "no-store" })
+      .then((response) => response.json())
+      .then((result: { user?: { role: string; permissions: string[] } }) => {
+        if (isMounted && result.user) {
+          setCurrentRole(result.user.role);
+          setPermissions(result.user.permissions ?? []);
+        }
+      })
+      .catch(() => {});
     const loadDashboard = async () => {
       try {
         const response = await fetch("/api/admin/dashboard", { cache: "no-store" });
@@ -66,6 +79,15 @@ export default function AdminDashboardPage() {
     void loadDashboard();
     return () => { isMounted = false; };
   }, []);
+
+  const hasAccess = (permission: string) => currentRole === "super_admin" || permissions.includes(permission);
+  const visibleNavigationItems = navigationItems.filter((item) => {
+    if (item === "Overview" || item === "Reports") return hasAccess("dashboard.read");
+    if (["Requests", "Students", "Institutions"].includes(item)) return hasAccess("requests.read");
+    if (item === "Payments") return hasAccess("payments.read");
+    if (item === "Users") return hasAccess("users.read");
+    return currentRole === "super_admin";
+  });
 
   const refreshDashboard = async () => {
     const response = await fetch("/api/admin/dashboard", { cache: "no-store" });
@@ -124,7 +146,7 @@ export default function AdminDashboardPage() {
                   <td className="px-4 py-3">{request.transcriptType ?? "Unknown service"}</td>
                   <td className="px-4 py-3 capitalize">{request.paymentStatus}</td>
                   <td className="px-4 py-3 capitalize">{request.status}</td>
-                  <td className="px-4 py-3"><select aria-label={`Update request ${request.id} status`} disabled={updatingRequest === request.id} value={request.status} onChange={(event) => void updateRequestStatus(request, event.target.value)} className="rounded-lg border border-slate-300 bg-white px-2 py-1.5 text-xs disabled:opacity-50"><option value="pending">Pending</option><option value="processing">Processing</option><option value="completed">Completed</option><option value="cancelled">Cancelled</option></select></td>
+                  <td className="px-4 py-3"><select aria-label={`Update request ${request.id} status`} disabled={!hasAccess("requests.update") || updatingRequest === request.id} value={request.status} onChange={(event) => void updateRequestStatus(request, event.target.value)} className="rounded-lg border border-slate-300 bg-white px-2 py-1.5 text-xs disabled:opacity-50"><option value="pending">Pending</option><option value="processing">Processing</option><option value="completed">Completed</option><option value="cancelled">Cancelled</option></select></td>
                 </tr>)}
                 {!filteredRequests.length && <tr><td colSpan={7} className="px-4 py-12 text-center text-slate-500">{dashboardError || "No transcript requests match this search."}</td></tr>}
               </tbody>
@@ -178,6 +200,14 @@ export default function AdminDashboardPage() {
               </tbody>
             </table>
           </div>
+        );
+      case "Users":
+        return (
+          <section className="mt-6 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+            <h3 className="text-lg font-semibold">Portal user directory</h3>
+            <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">View registered users. Only the Super Admin can create accounts, assign roles, and grant permissions.</p>
+            <Link href="/admin/users" className="mt-5 inline-flex rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white hover:bg-slate-700">Open user directory</Link>
+          </section>
         );
       case "Reports":
         return (
@@ -280,7 +310,11 @@ export default function AdminDashboardPage() {
                     <p className="text-sm font-medium text-slate-500">Operations</p>
                     <h3 className="mt-1 text-xl font-semibold text-slate-900">Recent transcript requests</h3>
                   </div>
-                  <button type="button" className="text-sm font-medium text-blue-600 hover:text-blue-700">
+                  <button
+                    type="button"
+                    onClick={() => setActiveSection("Requests")}
+                    className="text-sm font-medium text-blue-600 hover:text-blue-700"
+                  >
                     View all
                   </button>
                 </div>
@@ -370,7 +404,14 @@ export default function AdminDashboardPage() {
 
   return (
     <div className="min-h-screen bg-slate-100 text-slate-900">
-      <div className="mx-auto flex max-w-[1600px] gap-6 p-4 lg:p-6">
+      <div className="mx-auto flex max-w-[1600px] flex-col gap-4 p-4 lg:flex-row lg:gap-6 lg:p-6">
+        <nav aria-label="Admin dashboard navigation" className="flex gap-2 overflow-x-auto rounded-2xl border border-slate-200 bg-[#0f172a] p-2 lg:hidden">
+          {visibleNavigationItems.map((item) => (
+            <button key={item} type="button" onClick={() => setActiveSection(item)} className={`shrink-0 rounded-xl px-3 py-2 text-xs font-medium ${activeSection === item ? "bg-white/15 text-white" : "text-slate-300 hover:bg-white/10"}`}>
+              {item}
+            </button>
+          ))}
+        </nav>
         <aside className="hidden w-[280px] shrink-0 rounded-[28px] border border-slate-200 bg-[#0f172a] p-5 text-slate-100 shadow-[0_24px_80px_rgba(15,23,42,0.18)] lg:flex lg:flex-col">
           <div className="flex items-center gap-3 border-b border-slate-700 pb-5">
             <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-500 to-cyan-400 text-sm font-bold text-white">
@@ -385,7 +426,7 @@ export default function AdminDashboardPage() {
           </div>
 
           <nav className="mt-6 space-y-2">
-            {navigationItems.map((item) => (
+            {visibleNavigationItems.map((item) => (
               <button
                 key={item}
                 type="button"

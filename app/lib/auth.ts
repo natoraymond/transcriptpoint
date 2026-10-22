@@ -29,6 +29,7 @@ export type AuthUser = {
   role: UserRole;
   permissions: AdminPermission[];
   isActive: boolean;
+  avatarUrl?: string | null;
 };
 
 type UserRow = {
@@ -39,7 +40,28 @@ type UserRow = {
   role: UserRole;
   permissions: AdminPermission[] | string;
   isActive: boolean;
+  avatarUrl?: string | null;
 };
+
+let schemaEnsured = false;
+export async function ensureAuthSchema() {
+  if (schemaEnsured) return;
+  try {
+    const sql = getDatabase();
+    await sql`ALTER TABLE portal_users ADD COLUMN IF NOT EXISTS avatar_url TEXT`;
+    await sql`
+      CREATE TABLE IF NOT EXISTS portal_password_reset_tokens (
+        token_hash TEXT PRIMARY KEY,
+        user_id UUID NOT NULL REFERENCES portal_users(id) ON DELETE CASCADE,
+        expires_at TIMESTAMPTZ NOT NULL,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      )
+    `;
+    schemaEnsured = true;
+  } catch (err) {
+    console.error("Schema ensure warning:", err);
+  }
+}
 
 export function normalizeEmail(value: string) {
   return value.trim().toLowerCase();
@@ -59,7 +81,7 @@ export async function verifyPassword(password: string, stored: string) {
   return timingSafeEqual(actual, expected);
 }
 
-function digestToken(token: string) {
+export function digestToken(token: string) {
   return createHash("sha256").update(token).digest("hex");
 }
 
@@ -82,6 +104,7 @@ function toAuthUser(row: UserRow): AuthUser {
   return {
     ...row,
     permissions: parsePermissions(row.permissions),
+    avatarUrl: row.avatarUrl ?? null,
   };
 }
 
@@ -89,11 +112,12 @@ export async function getCurrentUser(): Promise<AuthUser | null> {
   const token = (await cookies()).get(SESSION_COOKIE)?.value;
   if (!token || !/^[a-f0-9]{64}$/i.test(token)) return null;
 
+  await ensureAuthSchema();
   const sql = getDatabase();
   const [row] = await sql`
     SELECT users.id, users.email, users.full_name AS "fullName",
       users.phone_number AS "phoneNumber", users.role, users.permissions,
-      users.is_active AS "isActive"
+      users.is_active AS "isActive", users.avatar_url AS "avatarUrl"
     FROM portal_sessions sessions
     JOIN portal_users users ON users.id = sessions.user_id
     WHERE sessions.token_hash = ${digestToken(token)}
@@ -122,6 +146,7 @@ export function publicUser(user: AuthUser) {
     phoneNumber: user.phoneNumber,
     role: user.role,
     permissions: user.permissions,
+    avatarUrl: user.avatarUrl ?? null,
   };
 }
 
@@ -194,11 +219,57 @@ export async function requirePermission(permission: AdminPermission) {
   return { user: result.user, response: null };
 }
 
+export async function notifySuperAdminSecurityAlert({
+  attemptedBy,
+  action,
+}: {
+  attemptedBy: string;
+  action: string;
+}) {
+  try {
+    const sql = getDatabase();
+    const [superAdmin] = await sql`
+      SELECT email, full_name AS "fullName"
+      FROM portal_users
+      WHERE role = 'super_admin' AND is_active = TRUE
+      ORDER BY created_at ASC
+      LIMIT 1
+    `;
+    const targetEmail = superAdmin?.email || process.env.SUPER_ADMIN_EMAIL;
+    const recipientName = superAdmin?.fullName || "Super Admin";
+
+    if (!targetEmail) return;
+
+    const resendApiKey = process.env.RESEND_API_KEY;
+    const emailFrom = process.env.EMAIL_FROM;
+    const appUrl = process.env.APP_URL || "http://localhost:3000";
+
+    if (resendApiKey && emailFrom) {
+      const { Resend } = await import("resend");
+      const resend = new Resend(resendApiKey);
+      await resend.emails.send({
+        from: emailFrom,
+        to: targetEmail,
+        subject: "⚠️ Security Alert: Attempted access to your Super Admin account",
+        text: `Hello ${recipientName},\n\nSECURITY ALERT: Someone attempted to access or sign into your Super Admin account on ${new Date().toUTCString()}.\n\nDetails:\n- Attempted by: ${attemptedBy}\n- Action: ${action}\n- Target: Super Admin Account & System Control\n\nAre you the one attempting to sign in? If yes, you can sign in directly to your Super Admin account at:\n${appUrl}/sign-in?next=%2Fsuper-admin\n\nIf you did NOT attempt this, an unauthorized user tried to access your Super Admin account. Please verify your credentials immediately.\n\nBest regards,\nTranscriptPoint Security System`,
+      });
+    } else {
+      console.log(`[SECURITY ALERT TO SUPER ADMIN: ${targetEmail}] ${attemptedBy} -> ${action}`);
+    }
+  } catch (err) {
+    console.error("Failed to notify super admin of security alert", err);
+  }
+}
+
 export async function requireSuperAdmin() {
   const result = await requireUser();
   if (!result.user) return result;
   if (result.user.role !== "super_admin") {
-    return { user: null, response: authErrorResponse(403, "Super admin access is required") };
+    await notifySuperAdminSecurityAlert({
+      attemptedBy: `${result.user.fullName} (${result.user.email}) [Role: ${result.user.role}]`,
+      action: "Attempted to execute an unauthorized Super Admin API call",
+    });
+    return { user: null, response: authErrorResponse(403, "Super admin access is required. A security notification was dispatched to the Super Admin.") };
   }
   return { user: result.user, response: null };
 }

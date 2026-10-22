@@ -21,6 +21,7 @@ CREATE TABLE IF NOT EXISTS portal_users (
   permissions JSONB NOT NULL DEFAULT '[]'::jsonb CHECK (jsonb_typeof(permissions) = 'array'),
   is_active BOOLEAN NOT NULL DEFAULT TRUE,
   email_verified_at TIMESTAMPTZ,
+  avatar_url TEXT,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
@@ -36,6 +37,17 @@ INSERT INTO portal_settings (id) VALUES (TRUE) ON CONFLICT (id) DO NOTHING;
 
 ALTER TABLE portal_users
   ADD COLUMN IF NOT EXISTS email_verified_at TIMESTAMPTZ;
+ALTER TABLE portal_users
+  ADD COLUMN IF NOT EXISTS avatar_url TEXT;
+
+CREATE TABLE IF NOT EXISTS portal_password_reset_tokens (
+  token_hash TEXT PRIMARY KEY,
+  user_id UUID NOT NULL REFERENCES portal_users(id) ON DELETE CASCADE,
+  expires_at TIMESTAMPTZ NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS portal_password_reset_tokens_expiry_idx ON portal_password_reset_tokens (expires_at);
 
 CREATE TABLE IF NOT EXISTS portal_sessions (
   token_hash TEXT PRIMARY KEY,

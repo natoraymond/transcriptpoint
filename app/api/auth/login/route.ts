@@ -63,7 +63,12 @@ export async function POST(request: Request) {
     }
 
     if (!row.emailVerifiedAt) {
-      return NextResponse.json({ error: "Verify your email address using the link we sent before signing in" }, { status: 403 });
+      // Auto-verify administrators and users when Resend email service is not configured
+      if (row.role === "admin" || row.role === "super_admin" || !process.env.RESEND_API_KEY) {
+        await sql`UPDATE portal_users SET email_verified_at = NOW(), updated_at = NOW() WHERE id = ${row.id}`;
+      } else {
+        return NextResponse.json({ error: "Verify your email address using the link we sent before signing in" }, { status: 403 });
+      }
     }
 
     await sql`DELETE FROM portal_login_attempts WHERE attempt_key = ${attemptKey}`;
@@ -98,6 +103,6 @@ export async function POST(request: Request) {
     });
   } catch (error) {
     console.error("Unable to sign in portal user", error);
-    return NextResponse.json({ error: "Unable to sign in right now" }, { status: 500 });
+    return NextResponse.json({ error: "Unable to complete sign-in right now" }, { status: 500 });
   }
 }

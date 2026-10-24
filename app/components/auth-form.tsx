@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState, type FormEvent } from "react";
 import SuperAdminAuthModal from "./super-admin-auth-modal";
+import UniversalNavbar from "./universal-navbar";
 
 type Props = { mode: "sign-in" | "sign-up"; next?: string; verification?: string };
 
@@ -90,18 +91,24 @@ export default function AuthForm({ mode, next, verification }: Props) {
   const signUpUrl = next ? `/sign-up?next=${encodeURIComponent(next)}` : "/sign-up";
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-[radial-gradient(ellipse_at_top,_#dbeafe,_#f1f5f9_55%)] px-4 py-10">
-      <section className="w-full max-w-md rounded-[28px] border border-white bg-white/90 p-7 shadow-[0_24px_80px_rgba(15,23,42,.12)] backdrop-blur sm:p-9">
-        <div className="flex items-center justify-between">
-          <Link href="/" className="text-xs font-bold uppercase tracking-[.22em] text-blue-800">
-            TranscriptPoint
-          </Link>
-          {isTargetingAdmin && (
-            <span className="rounded-full bg-slate-900 px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-white">
-              Admin Portal
-            </span>
-          )}
-        </div>
+    <div className="min-h-screen flex flex-col bg-[radial-gradient(ellipse_at_top,_#dbeafe,_#f1f5f9_55%)]">
+      <UniversalNavbar
+        pageTitle={isSignUp ? "Create Account" : "Sign In"}
+        badge={isTargetingAdmin ? "Admin Portal" : undefined}
+        theme="white"
+      />
+      <main className="flex flex-1 items-center justify-center px-4 py-8 sm:py-12">
+        <section className="w-full max-w-md rounded-[28px] border border-white bg-white/90 p-7 shadow-[0_24px_80px_rgba(15,23,42,.12)] backdrop-blur sm:p-9">
+          <div className="flex items-center justify-between">
+            <Link href="/" className="text-xs font-bold uppercase tracking-[.22em] text-blue-800">
+              TranscriptPoint
+            </Link>
+            {isTargetingAdmin && (
+              <span className="rounded-full bg-slate-900 px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-white">
+                Admin Portal
+              </span>
+            )}
+          </div>
 
         {/* Tab switch between Sign In and Sign Up */}
         <div className="mt-6 flex rounded-xl bg-slate-100 p-1">
@@ -313,5 +320,6 @@ export default function AuthForm({ mode, next, verification }: Props) {
         triggerContext="Visitor clicked on the Super Admin role option during registration"
       />
     </main>
+  </div>
   );
 }

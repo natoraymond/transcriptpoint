@@ -3,12 +3,15 @@
 import Link from "next/link";
 import { useState } from "react";
 import SuperAdminAuthModal from "./super-admin-auth-modal";
+import UniversalNavbar from "./universal-navbar";
 
 export default function SuperAdminGate({ currentUserRole }: { currentUserRole: string | null }) {
   const [isModalOpen, setIsModalOpen] = useState(true);
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-slate-900 px-4 py-12">
+    <div className="min-h-screen flex flex-col bg-slate-900">
+      <UniversalNavbar pageTitle="Security Gate" badge="Super Admin" theme="slate" />
+      <main className="flex flex-1 items-center justify-center px-4 py-12">
       <div className="w-full max-w-lg rounded-3xl border border-slate-800 bg-slate-950 p-8 text-center text-white shadow-2xl">
         <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-rose-500/10 text-rose-400 ring-1 ring-rose-500/20">
           <svg viewBox="0 0 24 24" fill="none" className="h-8 w-8 stroke-current" strokeWidth="2">
@@ -59,6 +62,7 @@ export default function SuperAdminGate({ currentUserRole }: { currentUserRole: s
         onClose={() => setIsModalOpen(false)}
         triggerContext="Someone navigated directly to the Super Admin restricted page (/super-admin)"
       />
-    </main>
+      </main>
+    </div>
   );
 }

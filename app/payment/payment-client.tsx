@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useSyncExternalStore } from "react";
+import UniversalNavbar from "../components/universal-navbar";
 import { formatNaira } from "../lib/transcript-options";
 
 type RequestData = { requestId: string; transcriptFormat: string; firstName: string; surname: string; email: string };
@@ -92,11 +93,24 @@ export default function PaymentClient() {
     }
   };
 
-  if (!request || !option) return <div className="flex min-h-screen items-center justify-center bg-slate-100 px-4"><div className="rounded-2xl bg-white p-6 text-center shadow-sm"><p className="text-sm text-slate-600">{optionsError || "Loading your request and transcript pricing..."}</p></div></div>;
+  if (!request || !option) {
+    return (
+      <div className="flex min-h-screen flex-col bg-slate-100">
+        <UniversalNavbar pageTitle="Payment Checkout" badge="Secure" theme="white" />
+        <div className="flex flex-1 items-center justify-center px-4">
+          <div className="rounded-2xl bg-white p-6 text-center shadow-sm">
+            <p className="text-sm text-slate-600">{optionsError || "Loading your request and transcript pricing..."}</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <main className="min-h-screen bg-slate-100 px-4 py-10 sm:px-6 lg:px-8">
-      <div className="mx-auto max-w-3xl rounded-[28px] border border-slate-200 bg-white p-6 shadow-[0_18px_45px_rgba(15,23,42,0.08)] sm:p-8">
+    <div className="min-h-screen flex flex-col bg-slate-100">
+      <UniversalNavbar pageTitle="Payment Checkout" badge="Secure" theme="white" />
+      <main className="flex-1 px-4 py-8 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-3xl rounded-[28px] border border-slate-200 bg-white p-6 shadow-[0_18px_45px_rgba(15,23,42,0.08)] sm:p-8">
         <div className="mb-6"><p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">University of Nigeria Nsukka</p><h1 className="mt-2 text-3xl font-semibold tracking-tight text-slate-900">Complete your payment</h1></div>
         <section className="rounded-3xl border border-slate-200 bg-slate-50 p-5"><div className="flex items-center justify-between border-b border-slate-200 pb-3"><span className="text-sm text-slate-500">Request summary</span><span className="text-sm font-semibold text-slate-900">Transcript Request</span></div><div className="mt-4 space-y-3 text-sm text-slate-600"><div className="flex justify-between gap-4"><span>Service</span><span className="text-right font-medium text-slate-900">{option.label}</span></div><div className="flex justify-between"><span>Amount</span><span className="font-medium text-slate-900">{formatNaira(option.amount)}</span></div><div className="flex justify-between"><span>Applicant</span><span className="font-medium text-slate-900">{request.firstName} {request.surname}</span></div></div></section>
         <div className="mt-6 rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">Paystack securely collects your payment details after you select the payment method you prefer.</div>
@@ -106,5 +120,6 @@ export default function PaymentClient() {
       </div>
       {isDialogOpen && <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 px-4 py-6" onClick={() => setIsDialogOpen(false)}><section role="dialog" aria-modal="true" aria-labelledby="payment-confirmation-title" className="w-full max-w-md rounded-3xl border border-slate-200 bg-white p-6 shadow-2xl sm:p-8" onClick={(event) => event.stopPropagation()}><p className="text-xs font-semibold uppercase tracking-[.2em] text-slate-500">Review your order</p><h2 id="payment-confirmation-title" className="mt-2 text-2xl font-semibold text-slate-900">Confirm payment</h2><p className="mt-4 text-sm leading-6 text-slate-600">You have added a total of 1 request to your cart.</p><div className="mt-4 flex items-center justify-between rounded-2xl bg-slate-50 px-4 py-4"><span className="text-sm text-slate-600">Your total bill</span><span className="text-lg font-semibold text-slate-900">{formatNaira(option.amount)}</span></div><p className="mt-5 text-sm text-slate-700">Do you wish to proceed with payment?</p><div className="mt-7 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end"><button type="button" onClick={() => setIsDialogOpen(false)} className="rounded-xl border border-slate-300 px-5 py-3 text-sm font-medium text-slate-700 hover:bg-slate-50">Cancel</button><button type="button" onClick={() => { setIsDialogOpen(false); void startPayment(); }} className="rounded-xl bg-[#173c5c] px-5 py-3 text-sm font-semibold text-white hover:bg-[#12314a]">Confirm and pay</button></div></section></div>}
     </main>
+    </div>
   );
 }

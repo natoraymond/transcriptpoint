@@ -4,6 +4,7 @@ import type { ChangeEvent, FormEvent, ReactNode } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import UniversalNavbar from "./components/universal-navbar";
 
 type TranscriptOption = {
   value: string;
@@ -15,6 +16,8 @@ type TranscriptOption = {
 };
 
 function LandingPage({ onGetStarted }: { onGetStarted: () => void }) {
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
   const steps = [
     {
       number: "01",
@@ -51,61 +54,132 @@ function LandingPage({ onGetStarted }: { onGetStarted: () => void }) {
 
   return (
     <div className="landing-page min-h-screen overflow-hidden bg-[#f8f8f5] text-[#142a27]">
-      <header className="relative z-10 mx-auto flex max-w-7xl items-center justify-between px-5 py-5 sm:px-8 lg:px-12 lg:py-7">
-        <a href="#home" className="flex items-center gap-3" aria-label="TranscriptPoint home">
-          <span className="flex h-10 w-10 items-center justify-center rounded-[14px] bg-[#173d35] text-white shadow-lg shadow-[#173d35]/15">
-            <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5" aria-hidden="true">
+      <header className="relative z-20 mx-auto flex max-w-7xl items-center justify-between px-4 py-4 sm:px-8 lg:px-12 lg:py-7">
+        <a href="#home" className="flex items-center gap-2.5 sm:gap-3" aria-label="TranscriptPoint home">
+          <span className="flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-[12px] sm:rounded-[14px] bg-[#173d35] text-white shadow-lg shadow-[#173d35]/15">
+            <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4 sm:h-5 sm:w-5" aria-hidden="true">
               <path d="M6 3.75h8l4 4v12.5H6a2 2 0 0 1-2-2v-12.5a2 2 0 0 1 2-2Z" stroke="currentColor" strokeWidth="1.7" strokeLinejoin="round" />
               <path d="M14 4v4h4M8 12h8M8 15.5h6" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
           </span>
-          <span className="text-[17px] font-bold tracking-[-0.04em]">Transcript<span className="text-[#718c50]">Point</span></span>
+          <span className="text-[16px] sm:text-[17px] font-bold tracking-[-0.04em]">Transcript<span className="text-[#718c50]">Point</span></span>
         </a>
 
+        {/* Desktop Navigation */}
         <nav className="hidden items-center gap-9 md:flex" aria-label="Main navigation">
           <a href="#how-it-works" className="text-sm font-medium text-[#536661] transition hover:text-[#173d35]">How it works</a>
           <a href="#why-transcriptpoint" className="text-sm font-medium text-[#536661] transition hover:text-[#173d35]">Why TranscriptPoint</a>
           <Link href="/assistant" className="text-sm font-medium text-[#536661] transition hover:text-[#173d35]">Help &amp; support</Link>
         </nav>
 
-        <div className="flex items-center gap-2 sm:gap-3">
-          <Link href="/sign-in" className="rounded-full px-3 py-2 text-xs font-semibold text-[#173c5c] transition hover:bg-[#edf2e8] hover:text-[#12314a] sm:px-3.5">
+        <div className="flex items-center gap-1.5 sm:gap-3">
+          <Link href="/sign-in" className="rounded-full px-2.5 py-1.5 text-xs font-semibold text-[#173c5c] transition hover:bg-[#edf2e8] hover:text-[#12314a] sm:px-3.5 sm:py-2">
             Sign in
           </Link>
-          <Link href="/admin" aria-label="Open admin dashboard" className="rounded-full px-3 py-2.5 text-sm font-semibold text-[#536661] transition hover:bg-[#edf2e8] hover:text-[#173d35] sm:px-4">
+          <Link href="/admin" aria-label="Open admin dashboard" className="hidden sm:inline-block rounded-full px-3 py-2 text-xs font-semibold text-[#536661] transition hover:bg-[#edf2e8] hover:text-[#173d35] sm:text-sm sm:px-4 sm:py-2.5">
             Admin
           </Link>
-          <button type="button" onClick={onGetStarted} className="inline-flex items-center gap-2 rounded-full bg-[#173d35] px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-[#173d35]/15 transition hover:-translate-y-0.5 hover:bg-[#245246] sm:px-5">
-            Get started <span aria-hidden="true">↗</span>
+          <button type="button" onClick={onGetStarted} className="inline-flex items-center gap-1.5 rounded-full bg-[#173d35] px-3.5 py-2 text-xs font-semibold text-white shadow-lg shadow-[#173d35]/15 transition hover:-translate-y-0.5 hover:bg-[#245246] sm:gap-2 sm:px-5 sm:py-3 sm:text-sm">
+            <span>Get started</span> <span aria-hidden="true">↗</span>
+          </button>
+
+          {/* Mobile hamburger button */}
+          <button
+            type="button"
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            aria-label="Toggle mobile menu"
+            className="flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 bg-white p-2 text-slate-700 shadow-sm transition hover:bg-slate-50 md:hidden"
+          >
+            {mobileMenuOpen ? (
+              <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5 stroke-current" strokeWidth="2">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            ) : (
+              <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5 stroke-current" strokeWidth="2">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
+              </svg>
+            )}
           </button>
         </div>
+
+        {/* Mobile slide-down menu */}
+        {mobileMenuOpen && (
+          <div className="absolute left-4 right-4 top-full mt-2 rounded-2xl border border-slate-200 bg-white/95 p-4 shadow-2xl backdrop-blur-md md:hidden z-30">
+            <nav className="flex flex-col space-y-2.5 text-sm font-medium text-slate-700">
+              <Link
+                href="/request"
+                onClick={() => setMobileMenuOpen(false)}
+                className="rounded-xl bg-[#173d35] px-3.5 py-2.5 font-semibold text-white shadow-sm transition hover:bg-[#245246]"
+              >
+                Start Transcript Request ↗
+              </Link>
+              <a
+                href="#how-it-works"
+                onClick={() => setMobileMenuOpen(false)}
+                className="rounded-xl px-3 py-2 transition hover:bg-slate-100 hover:text-[#173d35]"
+              >
+                How it works
+              </a>
+              <a
+                href="#why-transcriptpoint"
+                onClick={() => setMobileMenuOpen(false)}
+                className="rounded-xl px-3 py-2 transition hover:bg-slate-100 hover:text-[#173d35]"
+              >
+                Why TranscriptPoint
+              </a>
+              <Link
+                href="/assistant"
+                onClick={() => setMobileMenuOpen(false)}
+                className="rounded-xl px-3 py-2 transition hover:bg-slate-100 hover:text-[#173d35]"
+              >
+                Help &amp; support
+              </Link>
+              <div className="border-t border-slate-100 pt-2 grid grid-cols-2 gap-2">
+                <Link
+                  href="/sign-in"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="rounded-xl border border-slate-200 px-3 py-2 text-center text-xs font-semibold text-slate-800 transition hover:bg-slate-50"
+                >
+                  Sign in
+                </Link>
+                <Link
+                  href="/admin"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="rounded-xl border border-slate-200 px-3 py-2 text-center text-xs font-semibold text-slate-800 transition hover:bg-slate-50"
+                >
+                  Admin portal
+                </Link>
+              </div>
+            </nav>
+          </div>
+        )}
       </header>
 
       <main id="home">
-        <section className="relative mx-auto grid max-w-7xl items-center gap-12 px-5 pb-20 pt-10 sm:px-8 sm:pt-14 lg:grid-cols-[1.02fr_.98fr] lg:gap-16 lg:px-12 lg:pb-28 lg:pt-14">
+        <section className="relative mx-auto grid max-w-7xl items-center gap-10 px-4 pb-16 pt-6 sm:gap-12 sm:px-8 sm:pb-20 sm:pt-14 lg:grid-cols-[1.02fr_.98fr] lg:gap-16 lg:px-12 lg:pb-28 lg:pt-14">
           <div className="relative z-[1] max-w-2xl">
-            <div className="mb-7 inline-flex items-center gap-2 rounded-full border border-[#dce5d7] bg-white/75 px-3.5 py-2 text-xs font-semibold tracking-wide text-[#536c42] shadow-sm">
+            <div className="mb-5 sm:mb-7 inline-flex items-center gap-2 rounded-full border border-[#dce5d7] bg-white/75 px-3 py-1.5 text-[11px] font-semibold tracking-wide text-[#536c42] shadow-sm sm:px-3.5 sm:py-2 sm:text-xs">
               <span className="h-2 w-2 rounded-full bg-[#82a05a]" />
               YOUR ACADEMIC RECORDS, SIMPLIFIED
             </div>
-            <h1 className="text-[clamp(2.8rem,6vw,5.15rem)] font-semibold leading-[1.04] tracking-[-0.065em] text-[#173d35]">
+            <h1 className="text-[2.25rem] sm:text-[clamp(2.8rem,6vw,5.15rem)] font-semibold leading-[1.1] sm:leading-[1.04] tracking-[-0.05em] sm:tracking-[-0.065em] text-[#173d35]">
               Welcome to<br />TranscriptPoint<span className="text-[#88a365]">.</span>
             </h1>
-            <p className="mt-7 max-w-xl text-lg leading-8 text-[#5a6b66] sm:text-xl sm:leading-9">
+            <p className="mt-4 sm:mt-7 max-w-xl text-base sm:text-lg leading-7 sm:leading-8 text-[#5a6b66] sm:text-xl sm:leading-9">
               Request your academic transcript through a simple, convenient, and user-friendly online process.
             </p>
-            <p className="mt-4 max-w-xl text-[15px] leading-7 text-[#71807b]">
+            <p className="mt-3 sm:mt-4 max-w-xl text-sm leading-6 sm:text-[15px] sm:leading-7 text-[#71807b]">
               TranscriptPoint helps graduates and eligible students and alumni initiate transcript requests, provide the necessary information, and track progress through a centralized portal.
             </p>
-            <div className="mt-9 flex flex-col gap-4 sm:flex-row sm:items-center">
-              <button type="button" onClick={onGetStarted} className="group inline-flex items-center justify-center gap-3 rounded-full bg-[#173d35] px-7 py-4 text-[15px] font-semibold text-white shadow-[0_14px_30px_rgba(23,61,53,.18)] transition hover:-translate-y-0.5 hover:bg-[#245246]">
+            <div className="mt-7 sm:mt-9 flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
+              <button type="button" onClick={onGetStarted} className="group inline-flex items-center justify-center gap-2.5 rounded-full bg-[#173d35] px-6 py-3.5 text-sm sm:text-[15px] sm:px-7 sm:py-4 font-semibold text-white shadow-[0_14px_30px_rgba(23,61,53,.18)] transition hover:-translate-y-0.5 hover:bg-[#245246]">
                 Get started <span className="transition-transform group-hover:translate-x-1" aria-hidden="true">→</span>
               </button>
-              <a href="#how-it-works" className="inline-flex items-center justify-center gap-2 px-4 py-3 text-sm font-semibold text-[#456058] transition hover:text-[#173d35]">
+              <a href="#how-it-works" className="inline-flex items-center justify-center gap-2 rounded-full border border-slate-200 bg-white/80 px-5 py-3 text-sm font-semibold text-[#456058] transition hover:bg-white hover:text-[#173d35] sm:border-0 sm:bg-transparent sm:px-4 sm:py-3">
                 See how it works <span aria-hidden="true">↓</span>
               </a>
             </div>
-            <div className="mt-9 flex items-center gap-3 text-xs font-medium text-[#77847e]">
+            <div className="mt-7 sm:mt-9 flex items-center gap-3 text-xs font-medium text-[#77847e]">
               <span className="flex -space-x-2" aria-hidden="true">
                 <span className="flex h-8 w-8 items-center justify-center rounded-full border-2 border-[#f8f8f5] bg-[#dce6d4] text-[10px] text-[#35513b]">TP</span>
                 <span className="flex h-8 w-8 items-center justify-center rounded-full border-2 border-[#f8f8f5] bg-[#e9dfcb] text-[10px] text-[#735e3c]">✓</span>
@@ -116,44 +190,48 @@ function LandingPage({ onGetStarted }: { onGetStarted: () => void }) {
           </div>
 
           <div className="relative mx-auto w-full max-w-[540px] lg:ml-auto">
-            <div className="absolute -right-10 -top-12 h-56 w-56 rounded-full bg-[#e7eddd] blur-3xl" />
-            <div className="absolute -bottom-10 -left-12 h-48 w-48 rounded-full bg-[#e8eee7] blur-3xl" />
-            <div className="relative rounded-[30px] border border-[#e7e9e1] bg-white p-4 shadow-[0_35px_90px_rgba(35,58,49,.12)] sm:p-6">
-              <div className="flex items-center justify-between border-b border-[#edf0e9] pb-5">
+            <div className="absolute -right-10 -top-12 h-56 w-56 rounded-full bg-[#e7eddd] blur-3xl pointer-events-none" />
+            <div className="absolute -bottom-10 -left-12 h-48 w-48 rounded-full bg-[#e8eee7] blur-3xl pointer-events-none" />
+            <div className="relative rounded-[26px] sm:rounded-[30px] border border-[#e7e9e1] bg-white p-4 shadow-[0_35px_90px_rgba(35,58,49,.12)] sm:p-6">
+              <div className="flex items-center justify-between border-b border-[#edf0e9] pb-4 sm:pb-5">
                 <div className="flex items-center gap-3">
-                  <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[#edf2e8] text-[#4d6841]">
+                  <span className="flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-xl sm:rounded-2xl bg-[#edf2e8] text-[#4d6841]">
                     <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5" aria-hidden="true"><path d="M6 3.75h8l4 4v12.5H6a2 2 0 0 1-2-2v-12.5a2 2 0 0 1 2-2Z" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round"/><path d="M14 4v4h4M8 12h8M8 15.5h5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"/></svg>
                   </span>
-                  <div><p className="text-sm font-semibold text-[#253b34]">Your transcript request</p><p className="mt-0.5 text-xs text-[#87928c]">A straightforward process, all in one place</p></div>
+                  <div><p className="text-xs sm:text-sm font-semibold text-[#253b34]">Your transcript request</p><p className="mt-0.5 text-[11px] sm:text-xs text-[#87928c]">A straightforward process, all in one place</p></div>
                 </div>
-                <span className="rounded-full bg-[#eef4e9] px-3 py-1.5 text-[10px] font-bold uppercase tracking-[.12em] text-[#60794e]">Portal</span>
+                <span className="rounded-full bg-[#eef4e9] px-2.5 py-1 text-[9px] sm:px-3 sm:py-1.5 sm:text-[10px] font-bold uppercase tracking-[.12em] text-[#60794e]">Portal</span>
               </div>
 
-              <div className="py-6">
-                <div className="mb-6 flex items-end justify-between">
-                  <div><p className="text-xs font-medium text-[#87928c]">APPLICATION JOURNEY</p><p className="mt-1.5 text-2xl font-semibold tracking-tight text-[#203a32]">Four simple steps</p></div>
+              <div className="py-5 sm:py-6">
+                <div className="mb-4 sm:mb-6 flex items-end justify-between">
+                  <div><p className="text-[10px] sm:text-xs font-medium text-[#87928c]">APPLICATION JOURNEY</p><p className="mt-1 text-xl sm:text-2xl font-semibold tracking-tight text-[#203a32]">Four simple steps</p></div>
                   <span className="text-xs font-medium text-[#9aa49e]">01 — 04</span>
                 </div>
-                <div className="space-y-3">
+                <div className="space-y-2.5 sm:space-y-3">
                   {[
                     ["01", "Your details", "Personal & academic information", "done"],
                     ["02", "Delivery details", "Choose where it should be sent", "active"],
                     ["03", "Review & submit", "Check everything before sending", "next"],
                     ["04", "Track progress", "Follow your request in the portal", "next"],
                   ].map(([number, title, caption, status]) => (
-                    <div key={number} className={`flex items-center gap-3 rounded-2xl border p-3.5 ${status === "active" ? "border-[#dce6d5] bg-[#f7f9f3]" : "border-[#f0f1ed] bg-white"}`}>
-                      <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-xs font-bold ${status === "done" ? "bg-[#e8efe2] text-[#5d774c]" : status === "active" ? "bg-[#173d35] text-white" : "bg-[#f3f4f0] text-[#9aa49e]"}`}>{status === "done" ? "✓" : number}</span>
-                      <div className="min-w-0 flex-1"><p className="text-sm font-semibold text-[#30443d]">{title}</p><p className="mt-0.5 truncate text-xs text-[#8a9690]">{caption}</p></div>
+                    <div key={number} className={`flex items-center gap-2.5 sm:gap-3 rounded-2xl border p-3 sm:p-3.5 ${status === "active" ? "border-[#dce6d5] bg-[#f7f9f3]" : "border-[#f0f1ed] bg-white"}`}>
+                      <span className={`flex h-8 w-8 sm:h-9 sm:w-9 shrink-0 items-center justify-center rounded-xl text-xs font-bold ${status === "done" ? "bg-[#e8efe2] text-[#5d774c]" : status === "active" ? "bg-[#173d35] text-white" : "bg-[#f3f4f0] text-[#9aa49e]"}`}>{status === "done" ? "✓" : number}</span>
+                      <div className="min-w-0 flex-1"><p className="text-xs sm:text-sm font-semibold text-[#30443d]">{title}</p><p className="mt-0.5 truncate text-[11px] sm:text-xs text-[#8a9690]">{caption}</p></div>
                       {status === "active" && <span className="hidden rounded-full bg-white px-2.5 py-1 text-[10px] font-semibold text-[#617a4f] sm:inline">UP NEXT</span>}
                     </div>
                   ))}
                 </div>
               </div>
 
-              <div className="flex items-center justify-between rounded-2xl bg-[#f5f7f2] px-4 py-3.5">
-                <div className="flex items-center gap-2.5"><span className="flex h-7 w-7 items-center justify-center rounded-full bg-white text-[#718c50]">✓</span><span className="text-xs font-medium text-[#53665d]">Your information, organized</span></div>
-                <span className="text-xs font-semibold text-[#6d8355]">Simple &amp; secure</span>
+              <div className="flex items-center justify-between rounded-2xl bg-[#f5f7f2] px-3.5 py-3 sm:px-4 sm:py-3.5">
+                <div className="flex items-center gap-2 sm:gap-2.5"><span className="flex h-6 w-6 sm:h-7 sm:w-7 items-center justify-center rounded-full bg-white text-xs sm:text-sm text-[#718c50]">✓</span><span className="text-xs font-medium text-[#53665d]">Your information, organized</span></div>
+                <span className="text-[11px] sm:text-xs font-semibold text-[#6d8355]">Simple &amp; secure</span>
               </div>
+            </div>
+            <div className="mt-3 flex items-center justify-center gap-2 sm:hidden text-center text-xs text-slate-500">
+              <span className="text-[#66814d] font-bold">↗</span>
+              <span>Start when you&apos;re ready · Your request, at your pace</span>
             </div>
             <div className="absolute -bottom-5 -right-2 hidden items-center gap-3 rounded-2xl border border-[#edf0e9] bg-white px-4 py-3 shadow-[0_16px_45px_rgba(35,58,49,.11)] sm:flex lg:-right-8">
               <span className="flex h-9 w-9 items-center justify-center rounded-full bg-[#eff4e9] text-[#66814d]">↗</span>
@@ -443,39 +521,18 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen px-4 py-6 sm:px-6 lg:px-10">
-      <div className="mx-auto max-w-5xl rounded-[28px] border border-white/30 bg-white/20 shadow-[0_20px_60px_rgba(15,23,42,0.12)] backdrop-blur-[1px]">
-        <header className="flex items-center justify-between px-6 pt-5 sm:px-8">
-          <button type="button" onClick={() => router.push("/")} className="text-[12px] font-semibold tracking-[0.28em] text-slate-600 uppercase transition hover:text-[#173c5c]">
-            TranscriptPoint
-          </button>
-          <div className="flex items-center gap-4">
-            <Link
-              href="/sign-in"
-              className="text-xs font-semibold text-[#173c5c] transition hover:text-[#12314a]"
-            >
-              Sign in
-            </Link>
-            <Link
-              href="/admin"
-              className="text-xs font-semibold text-[#173c5c] transition hover:text-[#12314a]"
-            >
-              Admin dashboard
-            </Link>
-            <Link
-              href="/assistant"
-              className="text-xs font-semibold text-[#173c5c] transition hover:text-[#12314a]"
-            >
-              AI Assistant
-            </Link>
-            <div className="flex items-center gap-2 text-[10px] font-medium uppercase tracking-[0.2em] text-slate-500">
-              <span className="h-2.5 w-2.5 rounded-full bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.8)]" />
-              Online
-            </div>
-          </div>
-        </header>
-
-        <main className="px-4 pb-6 pt-4 sm:px-8 sm:pb-8">
+    <div className="min-h-screen bg-[#f8f8f5] text-[#142a27]">
+      <UniversalNavbar
+        pageTitle="Request Portal"
+        badge="Online Service"
+        theme="emerald"
+        extraLinks={[
+          { label: "Track Request", href: "/dashboard" },
+        ]}
+      />
+      <div className="px-4 py-6 sm:px-6 lg:px-10">
+        <div className="mx-auto max-w-5xl rounded-[28px] border border-white/60 bg-white/70 shadow-[0_20px_60px_rgba(15,23,42,0.08)] backdrop-blur-sm">
+          <main className="px-4 pb-6 pt-6 sm:px-8 sm:pb-8">
           <div className="rounded-[22px] border border-white/40 bg-[#e8ebeb]/35 px-4 py-5 shadow-inner shadow-white/30 sm:px-6 sm:py-6">
             <div className="mb-6">
               <h1 className="text-2xl font-semibold tracking-tight text-slate-900 sm:text-[2rem]">
@@ -858,6 +915,7 @@ export default function Home() {
           </div>
         </main>
       </div>
+    </div>
 
       <Link
         href="/assistant"

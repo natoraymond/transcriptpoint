@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useState, type FormEvent } from "react";
+import UniversalNavbar from "../components/universal-navbar";
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("");
@@ -39,11 +40,13 @@ export default function ForgotPasswordPage() {
   };
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-[radial-gradient(ellipse_at_top,_#dbeafe,_#f1f5f9_55%)] px-4 py-10">
-      <section className="w-full max-w-md rounded-[28px] border border-white bg-white/90 p-7 shadow-[0_24px_80px_rgba(15,23,42,.12)] backdrop-blur sm:p-9">
-        <Link href="/" className="text-xs font-bold uppercase tracking-[.22em] text-blue-800">
-          TranscriptPoint
-        </Link>
+    <div className="min-h-screen flex flex-col bg-[radial-gradient(ellipse_at_top,_#dbeafe,_#f1f5f9_55%)]">
+      <UniversalNavbar pageTitle="Account Recovery" badge="Reset" theme="white" />
+      <main className="flex flex-1 items-center justify-center px-4 py-8 sm:py-12">
+        <section className="w-full max-w-md rounded-[28px] border border-white bg-white/90 p-7 shadow-[0_24px_80px_rgba(15,23,42,.12)] backdrop-blur sm:p-9">
+          <Link href="/" className="text-xs font-bold uppercase tracking-[.22em] text-blue-800">
+            TranscriptPoint
+          </Link>
         <h1 className="mt-7 text-2xl font-bold tracking-tight text-slate-950 sm:text-3xl">
           Reset your password
         </h1>
@@ -103,5 +106,6 @@ export default function ForgotPasswordPage() {
         </p>
       </section>
     </main>
+  </div>
   );
 }

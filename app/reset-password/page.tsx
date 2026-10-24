@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useState, type FormEvent } from "react";
+import UniversalNavbar from "../components/universal-navbar";
 
 function ResetPasswordForm() {
   const router = useRouter();
@@ -149,24 +150,27 @@ function ResetPasswordForm() {
 
 export default function ResetPasswordPage() {
   return (
-    <main className="flex min-h-screen items-center justify-center bg-[radial-gradient(ellipse_at_top,_#dbeafe,_#f1f5f9_55%)] px-4 py-10">
-      <section className="w-full max-w-md rounded-[28px] border border-white bg-white/90 p-7 shadow-[0_24px_80px_rgba(15,23,42,.12)] backdrop-blur sm:p-9">
-        <Link href="/" className="text-xs font-bold uppercase tracking-[.22em] text-blue-800">
-          TranscriptPoint
-        </Link>
-        <h1 className="mt-7 text-2xl font-bold tracking-tight text-slate-950 sm:text-3xl">
-          Set new password
-        </h1>
-        <p className="mt-2 text-sm leading-6 text-slate-500">
-          Enter and confirm your new secure password.
-        </p>
+    <div className="min-h-screen flex flex-col bg-[radial-gradient(ellipse_at_top,_#dbeafe,_#f1f5f9_55%)]">
+      <UniversalNavbar pageTitle="Set Password" badge="Security" theme="white" />
+      <main className="flex flex-1 items-center justify-center px-4 py-8 sm:py-12">
+        <section className="w-full max-w-md rounded-[28px] border border-white bg-white/90 p-7 shadow-[0_24px_80px_rgba(15,23,42,.12)] backdrop-blur sm:p-9">
+          <Link href="/" className="text-xs font-bold uppercase tracking-[.22em] text-blue-800">
+            TranscriptPoint
+          </Link>
+          <h1 className="mt-7 text-2xl font-bold tracking-tight text-slate-950 sm:text-3xl">
+            Set new password
+          </h1>
+          <p className="mt-2 text-sm leading-6 text-slate-500">
+            Enter and confirm your new secure password.
+          </p>
 
-        <div className="mt-6">
-          <Suspense fallback={<p className="text-center text-sm text-slate-500">Loading reset verification…</p>}>
-            <ResetPasswordForm />
-          </Suspense>
-        </div>
-      </section>
-    </main>
+          <div className="mt-6">
+            <Suspense fallback={<p className="text-center text-sm text-slate-500">Loading reset verification…</p>}>
+              <ResetPasswordForm />
+            </Suspense>
+          </div>
+        </section>
+      </main>
+    </div>
   );
 }

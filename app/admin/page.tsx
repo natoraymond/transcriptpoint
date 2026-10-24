@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState, type FormEvent, type ChangeEvent } from "react";
+import UniversalNavbar from "../components/universal-navbar";
 
 const navigationItems = [
   "Overview",
@@ -1239,6 +1240,16 @@ export default function AdminDashboardPage() {
 
   return (
     <div className="min-h-screen bg-slate-100 text-slate-900">
+      <UniversalNavbar
+        pageTitle="Admin Console"
+        badge="Staff"
+        theme="slate"
+        extraLinks={[
+          { label: "Dashboard", href: "/admin" },
+          { label: "User Directory", href: "/admin/users" },
+          { label: "New Request", href: "/request" },
+        ]}
+      />
       <div className="mx-auto flex max-w-[1600px] flex-col gap-4 p-4 lg:flex-row lg:gap-6 lg:p-6">
         {/* Mobile Navigation bar with sticky scrolling and support button */}
         <div className="flex items-center gap-2 lg:hidden">

@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState, type FormEvent, type ChangeEvent } from "react";
 import AccountControls from "./account-controls";
+import UniversalNavbar from "./universal-navbar";
 
 const permissionOptions = [
   { id: "dashboard.read", label: "Dashboard" },
@@ -286,9 +287,19 @@ export default function SuperAdminDashboard({
     : "SA";
 
   return (
-    <main className="min-h-screen bg-slate-100 px-4 py-6 text-slate-900 sm:px-8">
-      <div className="mx-auto max-w-[1500px]">
-        {/* System control Header with Profile Picture */}
+    <div className="min-h-screen flex flex-col bg-slate-100 text-slate-900">
+      <UniversalNavbar
+        pageTitle="System Control"
+        badge="Super Admin"
+        theme="slate"
+        extraLinks={[
+          { label: "Admin Console", href: "/admin" },
+          { label: "User Directory", href: "/admin/users" },
+        ]}
+      />
+      <main className="flex-1 px-4 py-6 sm:px-8">
+        <div className="mx-auto max-w-[1500px]">
+          {/* System control Header with Profile Picture */}
         <header className="flex flex-col gap-5 rounded-3xl bg-slate-950 p-5 text-white shadow-xl sm:flex-row sm:items-center sm:justify-between sm:p-8">
           <div className="flex items-center gap-3 sm:gap-4">
             <button
@@ -809,6 +820,7 @@ export default function SuperAdminDashboard({
           </section>
         </div>
       )}
-    </main>
+      </main>
+    </div>
   );
 }

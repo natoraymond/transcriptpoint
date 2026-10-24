@@ -4,7 +4,6 @@ import type { ChangeEvent, FormEvent, ReactNode } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import AccountLink from "./components/account-link";
 
 type TranscriptOption = {
   value: string;
@@ -70,7 +69,9 @@ function LandingPage({ onGetStarted }: { onGetStarted: () => void }) {
         </nav>
 
         <div className="flex items-center gap-2 sm:gap-3">
-          <AccountLink />
+          <Link href="/sign-in" className="rounded-full px-3 py-2 text-xs font-semibold text-[#173c5c] transition hover:bg-[#edf2e8] hover:text-[#12314a] sm:px-3.5">
+            Sign in
+          </Link>
           <Link href="/admin" aria-label="Open admin dashboard" className="rounded-full px-3 py-2.5 text-sm font-semibold text-[#536661] transition hover:bg-[#edf2e8] hover:text-[#173d35] sm:px-4">
             Admin
           </Link>
@@ -449,7 +450,12 @@ export default function Home() {
             TranscriptPoint
           </button>
           <div className="flex items-center gap-4">
-            <AccountLink />
+            <Link
+              href="/sign-in"
+              className="text-xs font-semibold text-[#173c5c] transition hover:text-[#12314a]"
+            >
+              Sign in
+            </Link>
             <Link
               href="/admin"
               className="text-xs font-semibold text-[#173c5c] transition hover:text-[#12314a]"

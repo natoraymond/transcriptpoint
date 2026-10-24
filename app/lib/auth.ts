@@ -112,20 +112,47 @@ export async function getCurrentUser(): Promise<AuthUser | null> {
   const token = (await cookies()).get(SESSION_COOKIE)?.value;
   if (!token || !/^[a-f0-9]{64}$/i.test(token)) return null;
 
-  await ensureAuthSchema();
-  const sql = getDatabase();
-  const [row] = await sql`
-    SELECT users.id, users.email, users.full_name AS "fullName",
-      users.phone_number AS "phoneNumber", users.role, users.permissions,
-      users.is_active AS "isActive", users.avatar_url AS "avatarUrl"
-    FROM portal_sessions sessions
-    JOIN portal_users users ON users.id = sessions.user_id
-    WHERE sessions.token_hash = ${digestToken(token)}
-      AND sessions.expires_at > NOW()
-      AND users.is_active = TRUE
-    LIMIT 1
-  `;
-  return row ? toAuthUser(row as UserRow) : null;
+  try {
+    await ensureAuthSchema();
+    const sql = getDatabase();
+    const tokenHash = digestToken(token);
+
+    // Run query with simple retry in case of transient network glitches
+    let rows: unknown[] = [];
+    try {
+      rows = await sql`
+        SELECT users.id, users.email, users.full_name AS "fullName",
+          users.phone_number AS "phoneNumber", users.role, users.permissions,
+          users.is_active AS "isActive", users.avatar_url AS "avatarUrl"
+        FROM portal_sessions sessions
+        JOIN portal_users users ON users.id = sessions.user_id
+        WHERE sessions.token_hash = ${tokenHash}
+          AND sessions.expires_at > NOW()
+          AND users.is_active = TRUE
+        LIMIT 1
+      `;
+    } catch {
+      // Retry once after 250ms
+      await new Promise((resolve) => setTimeout(resolve, 250));
+      rows = await sql`
+        SELECT users.id, users.email, users.full_name AS "fullName",
+          users.phone_number AS "phoneNumber", users.role, users.permissions,
+          users.is_active AS "isActive", users.avatar_url AS "avatarUrl"
+        FROM portal_sessions sessions
+        JOIN portal_users users ON users.id = sessions.user_id
+        WHERE sessions.token_hash = ${tokenHash}
+          AND sessions.expires_at > NOW()
+          AND users.is_active = TRUE
+        LIMIT 1
+      `;
+    }
+
+    const row = rows[0] as UserRow | undefined;
+    return row ? toAuthUser(row) : null;
+  } catch (error) {
+    console.error("Database connection error in getCurrentUser:", error);
+    return null;
+  }
 }
 
 export function userHasPermission(user: AuthUser, permission: AdminPermission) {

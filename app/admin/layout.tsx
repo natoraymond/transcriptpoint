@@ -1,7 +1,6 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import AccountControls from "../components/account-controls";
 import { getCurrentUser } from "../lib/auth";
 
 export default async function AdminLayout({ children }: { children: ReactNode }) {
@@ -53,28 +52,5 @@ export default async function AdminLayout({ children }: { children: ReactNode })
     );
   }
 
-  return (
-    <>
-      <div className="flex items-center justify-between border-b border-slate-200 bg-white px-4 py-3 sm:px-8">
-        <div className="flex items-center gap-4">
-          <Link href="/admin" className="text-xs font-bold uppercase tracking-[.2em] text-slate-800">
-            TranscriptPoint Admin
-          </Link>
-          <span className="hidden rounded-full bg-slate-100 px-2.5 py-0.5 text-[11px] font-semibold text-slate-600 sm:inline-block">
-            {user.role === "super_admin" ? "Super Admin" : "Administrator"}
-          </span>
-        </div>
-        <div className="flex items-center gap-3">
-          <Link
-            href="/sign-up?role=admin&next=%2Fadmin"
-            className="hidden rounded-xl border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:bg-slate-50 sm:inline-block"
-          >
-            + Sign up new admin
-          </Link>
-          <AccountControls fullName={user.fullName} role={user.role} dashboardHref="/admin" avatarUrl={user.avatarUrl} />
-        </div>
-      </div>
-      {children}
-    </>
-  );
+  return <>{children}</>;
 }

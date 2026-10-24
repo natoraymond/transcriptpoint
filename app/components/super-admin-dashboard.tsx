@@ -289,8 +289,8 @@ export default function SuperAdminDashboard({
     <main className="min-h-screen bg-slate-100 px-4 py-6 text-slate-900 sm:px-8">
       <div className="mx-auto max-w-[1500px]">
         {/* System control Header with Profile Picture */}
-        <header className="flex flex-col gap-6 rounded-3xl bg-slate-950 p-6 text-white shadow-xl sm:flex-row sm:items-center sm:justify-between sm:p-8">
-          <div className="flex items-center gap-4">
+        <header className="flex flex-col gap-5 rounded-3xl bg-slate-950 p-5 text-white shadow-xl sm:flex-row sm:items-center sm:justify-between sm:p-8">
+          <div className="flex items-center gap-3 sm:gap-4">
             <button
               type="button"
               onClick={() => {
@@ -299,13 +299,13 @@ export default function SuperAdminDashboard({
                 setAvatarError("");
                 setIsAvatarModalOpen(true);
               }}
-              className="group relative flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-2xl border-2 border-cyan-400/40 bg-slate-900 shadow-lg transition hover:scale-105 hover:border-cyan-400"
+              className="group relative flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-2xl border-2 border-cyan-400/40 bg-slate-900 shadow-lg transition hover:scale-105 hover:border-cyan-400 sm:h-16 sm:w-16"
               title="Click to upload/change Super Admin profile picture"
             >
               {avatarUrl ? (
                 <img src={avatarUrl} alt={fullName} className="h-full w-full object-cover" />
               ) : (
-                <span className="text-xl font-bold text-white">{initials}</span>
+                <span className="text-lg font-bold text-white sm:text-xl">{initials}</span>
               )}
               <div className="absolute inset-0 flex items-center justify-center bg-black/55 opacity-0 transition group-hover:opacity-100">
                 <svg viewBox="0 0 24 24" fill="none" className="h-6 w-6 stroke-current text-white" strokeWidth="2">
@@ -318,16 +318,16 @@ export default function SuperAdminDashboard({
                 </svg>
               </div>
             </button>
-            <div>
+            <div className="min-w-0">
               <p className="text-xs font-semibold uppercase tracking-[.2em] text-cyan-300">System control</p>
-              <h1 className="mt-1 text-2xl font-bold tracking-tight sm:text-3xl">Super Admin</h1>
-              <p className="mt-1 text-xs text-slate-300">
+              <h1 className="mt-0.5 text-xl font-bold tracking-tight sm:text-3xl">Super Admin</h1>
+              <p className="mt-0.5 truncate text-xs text-slate-300">
                 {fullName} {userEmail ? `· ${userEmail}` : ""}
               </p>
             </div>
           </div>
 
-          <div className="flex flex-wrap items-center gap-3">
+          <div className="flex flex-wrap items-center gap-2.5 sm:gap-3">
             <button
               type="button"
               onClick={() => {
@@ -336,7 +336,7 @@ export default function SuperAdminDashboard({
                 setAvatarError("");
                 setIsAvatarModalOpen(true);
               }}
-              className="inline-flex items-center gap-2 rounded-xl border border-slate-700 bg-slate-800/90 px-3.5 py-2 text-xs font-semibold text-cyan-200 transition hover:border-cyan-400 hover:bg-slate-800 hover:text-white"
+              className="inline-flex items-center gap-1.5 rounded-xl border border-slate-700 bg-slate-800/90 px-3 py-2 text-xs font-semibold text-cyan-200 transition hover:border-cyan-400 hover:bg-slate-800 hover:text-white"
             >
               <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4 stroke-current" strokeWidth="2">
                 <path
@@ -346,29 +346,29 @@ export default function SuperAdminDashboard({
                 />
                 <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 12.75a4.5 4.5 0 1 1-9 0 4.5 4.5 0 0 1 9 0Z" />
               </svg>
-              <span>Upload Picture</span>
+              <span>Photo</span>
             </button>
             <AccountControls fullName={fullName} role="super_admin" dashboardHref="/super-admin" avatarUrl={avatarUrl} />
           </div>
         </header>
 
-        <nav className="mt-4 flex flex-wrap gap-2 rounded-2xl border border-slate-200 bg-white p-3 text-sm">
-          <a href="#overview" className="rounded-xl bg-slate-900 px-4 py-2 font-medium text-white">
+        <nav className="mt-4 flex gap-1.5 overflow-x-auto rounded-2xl border border-slate-200 bg-white p-2 text-xs sm:gap-2 sm:text-sm">
+          <a href="#overview" className="shrink-0 rounded-xl bg-slate-900 px-3.5 py-2 font-medium text-white sm:px-4">
             Overview
           </a>
-          <a href="#create" className="rounded-xl px-4 py-2 font-medium text-slate-600 hover:bg-slate-100">
+          <a href="#create" className="shrink-0 rounded-xl px-3 py-2 font-medium text-slate-600 hover:bg-slate-100 sm:px-4">
             Create account
           </a>
-          <a href="#users" className="rounded-xl px-4 py-2 font-medium text-slate-600 hover:bg-slate-100">
+          <a href="#users" className="shrink-0 rounded-xl px-3 py-2 font-medium text-slate-600 hover:bg-slate-100 sm:px-4">
             Users &amp; permissions
           </a>
-          <a href="#products" className="rounded-xl px-4 py-2 font-medium text-slate-600 hover:bg-slate-100">
+          <a href="#products" className="shrink-0 rounded-xl px-3 py-2 font-medium text-slate-600 hover:bg-slate-100 sm:px-4">
             Products
           </a>
-          <a href="#activity" className="rounded-xl px-4 py-2 font-medium text-slate-600 hover:bg-slate-100">
+          <a href="#activity" className="shrink-0 rounded-xl px-3 py-2 font-medium text-slate-600 hover:bg-slate-100 sm:px-4">
             Activity
           </a>
-          <a href="/admin" className="rounded-xl px-4 py-2 font-medium text-slate-600 hover:bg-slate-100">
+          <a href="/admin" className="shrink-0 rounded-xl px-3 py-2 font-medium text-slate-600 hover:bg-slate-100 sm:px-4">
             Admin dashboard
           </a>
         </nav>
@@ -483,18 +483,18 @@ export default function SuperAdminDashboard({
         </section>
 
         <section id="users" className="mt-5 overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
-          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 p-6">
+          <div className="flex flex-col gap-3 border-b border-slate-200 p-5 sm:flex-row sm:items-center sm:justify-between sm:p-6">
             <div>
               <h2 className="text-lg font-semibold">Users, roles &amp; permissions</h2>
               <p className="mt-1 text-sm text-slate-500">Changes take effect immediately. Suspended accounts lose all active sessions.</p>
             </div>
-            <div className="flex gap-2">
+            <div className="flex items-center gap-2">
               <input
                 aria-label="Search accounts"
                 placeholder="Search name, email, role"
                 value={search}
                 onChange={(event) => setSearch(event.target.value)}
-                className="form-input max-w-xs"
+                className="form-input text-xs sm:text-sm"
               />
               <button
                 type="button"
@@ -503,13 +503,103 @@ export default function SuperAdminDashboard({
                     setError(e instanceof Error ? e.message : "Unable to refresh"),
                   )
                 }
-                className="rounded-xl border border-slate-300 px-4 py-2 text-sm font-semibold hover:bg-slate-50"
+                className="shrink-0 rounded-xl border border-slate-300 px-3.5 py-2 text-xs sm:text-sm font-semibold hover:bg-slate-50"
               >
                 Refresh
               </button>
             </div>
           </div>
-          <div className="overflow-x-auto">
+
+          {/* Mobile User Cards */}
+          <div className="divide-y divide-slate-100 md:hidden">
+            {filteredUsers.map((user) => (
+              <div key={user.id} className={`p-4 ${!user.isActive ? "bg-slate-50/80 text-slate-500" : ""}`}>
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-3 min-w-0">
+                    {user.avatarUrl ? (
+                      <img src={user.avatarUrl} alt={user.fullName} className="h-9 w-9 shrink-0 rounded-full border border-slate-200 object-cover" />
+                    ) : (
+                      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-slate-900 text-xs font-bold text-white">
+                        {user.fullName.slice(0, 2).toUpperCase()}
+                      </span>
+                    )}
+                    <div className="min-w-0">
+                      <p className="truncate font-semibold text-slate-900 text-sm">
+                        {user.fullName}
+                        {user.id === currentUserId ? " · You" : ""}
+                      </p>
+                      <p className="truncate text-xs text-slate-500">{user.email}</p>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    disabled={savingId === user.id || user.role === "super_admin"}
+                    onClick={() => void saveUser(user, { isActive: !user.isActive })}
+                    className={`shrink-0 rounded-full px-2.5 py-1 text-[11px] font-semibold ${
+                      user.isActive ? "bg-emerald-50 text-emerald-700" : "bg-red-50 text-red-700"
+                    }`}
+                  >
+                    {user.isActive ? "Active" : "Suspended"}
+                  </button>
+                </div>
+
+                <div className="mt-3.5 space-y-2 border-t border-slate-100 pt-3">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="font-medium text-slate-600">Role:</span>
+                    <select
+                      aria-label={`Role for ${user.email}`}
+                      disabled={savingId === user.id || user.role === "super_admin"}
+                      className="rounded-lg border border-slate-300 bg-white px-2.5 py-1 text-xs"
+                      value={user.role}
+                      onChange={(event) => void saveUser(user, { role: event.target.value as Role })}
+                    >
+                      <option value="user">User</option>
+                      <option value="admin">Admin</option>
+                      <option value="super_admin">Super Admin</option>
+                    </select>
+                  </div>
+
+                  {user.role === "admin" && (
+                    <div className="mt-2 rounded-xl bg-slate-50 p-3">
+                      <p className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-slate-500">Admin Permissions</p>
+                      <div className="grid grid-cols-2 gap-2">
+                        {permissionOptions.map((permission) => (
+                          <label key={permission.id} className="flex items-center gap-1.5 text-xs text-slate-700">
+                            <input
+                              type="checkbox"
+                              disabled={savingId === user.id}
+                              checked={user.permissions.includes(permission.id)}
+                              onChange={(event) => {
+                                const next = event.target.checked
+                                  ? [...user.permissions, permission.id]
+                                  : user.permissions.filter((val) => val !== permission.id);
+                                void saveUser(user, { permissions: next });
+                              }}
+                            />
+                            {permission.label}
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="flex items-center justify-between text-[11px] text-slate-400 pt-1">
+                    <span>Joined: {new Date(user.createdAt).toLocaleDateString()}</span>
+                    <span>{savingId === user.id ? "Saving…" : "Auto-saved"}</span>
+                  </div>
+                </div>
+              </div>
+            ))}
+            {!loading && !filteredUsers.length && (
+              <p className="p-6 text-center text-sm text-slate-500">No accounts found.</p>
+            )}
+            {loading && (
+              <p className="p-6 text-center text-sm text-slate-500">Loading accounts…</p>
+            )}
+          </div>
+
+          {/* Desktop Table View */}
+          <div className="hidden overflow-x-auto md:block">
             <table className="min-w-[1050px] w-full text-left text-sm">
               <thead className="bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
                 <tr>
@@ -591,7 +681,7 @@ export default function SuperAdminDashboard({
                     <td className="px-5 py-4 text-xs text-slate-500">{savingId === user.id ? "Saving…" : "Saved"}</td>
                   </tr>
                 ))}
-                {!loading && !users.length && (
+                {!loading && !filteredUsers.length && (
                   <tr>
                     <td colSpan={6} className="px-5 py-12 text-center text-slate-500">
                       No accounts found.

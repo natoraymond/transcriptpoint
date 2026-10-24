@@ -63,8 +63,8 @@ export default function AccountControls({ fullName, role, dashboardHref, avatarU
     .toUpperCase() || "A";
 
   return (
-    <div className="flex items-center gap-3">
-      <Link href={dashboardHref} className="flex items-center gap-2.5 text-right">
+    <div className="flex items-center gap-1.5 sm:gap-3">
+      <Link href={dashboardHref} className="flex items-center gap-2 text-right">
         {avatarUrl ? (
           <img
             src={avatarUrl}
@@ -90,17 +90,25 @@ export default function AccountControls({ fullName, role, dashboardHref, avatarU
           setPasswordError("");
           setPasswordNotice("");
         }}
-        className="rounded-xl border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50"
+        className="rounded-xl border border-slate-300 px-2 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 sm:px-3"
       >
-        Password
+        <span className="hidden sm:inline">Password</span>
+        <span className="sm:hidden text-[11px]">Pass</span>
       </button>
       <button
         type="button"
         onClick={() => void signOut()}
         disabled={isSigningOut}
-        className="rounded-xl border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+        className="rounded-xl border border-slate-300 px-2 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50 sm:px-3"
       >
-        {isSigningOut ? "Signing out…" : "Sign out"}
+        {isSigningOut ? (
+          "…"
+        ) : (
+          <>
+            <span className="hidden sm:inline">Sign out</span>
+            <span className="sm:hidden text-[11px]">Exit</span>
+          </>
+        )}
       </button>
 
       {isPasswordDialogOpen && (

@@ -67,7 +67,9 @@ for (const country of Country.getAllCountries()) {
       ? 6800000
       : ["Lagos", "Federal Capital Territory (Abuja)"].includes(stateName)
         ? 3000000
-        : null;
+        : ["Anambra", "Imo", "Delta", "Ebonyi", "Abia", "Enugu", "Rivers", "Rivers (Port Harcourt)", "Port Harcourt (Rivers)"].includes(stateName)
+          ? 2450000
+          : null;
     destinations.push([continent, country.isoCode, country.name, stateName, priceKobo]);
   }
 }

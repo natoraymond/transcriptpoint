@@ -124,7 +124,8 @@ export default function AdminDashboardPage() {
       const response = await fetch("/api/admin/users", { cache: "no-store" });
       const result = (await response.json()) as { users?: PortalUser[]; error?: string };
       if (response.ok && result.users) {
-        setUsersList(result.users);
+        // Filter out super_admin accounts so other admins cannot view super admin details
+        setUsersList(result.users.filter((user) => user.role !== "super_admin"));
       }
     } catch {
       // ignore

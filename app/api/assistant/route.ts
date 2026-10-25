@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { requireUser } from "../../lib/auth";
+import { getCurrentUser } from "../../lib/auth";
 import { getDatabase } from "../../lib/db";
 
 type ChatMessage = {
@@ -17,122 +17,218 @@ function isUuid(value: string) {
 }
 
 async function getConversationMessages(conversationId: string) {
-  const sql = getDatabase();
-  const rows = await sql`
-    SELECT role, content
-    FROM assistant_messages
-    WHERE conversation_id = ${conversationId}
-    ORDER BY created_at DESC
-    LIMIT 12
-  `;
-
-  return rows as ChatMessage[];
+  try {
+    const sql = getDatabase();
+    const rows = await sql`
+      SELECT role, content
+      FROM assistant_messages
+      WHERE conversation_id = ${conversationId}
+      ORDER BY created_at DESC
+      LIMIT 12
+    `;
+    return rows as ChatMessage[];
+  } catch {
+    return [];
+  }
 }
 
 export async function POST(request: Request) {
-  const access = await requireUser();
-  if (!access.user) return access.response;
+  const user = await getCurrentUser();
 
   try {
     const body = (await request.json()) as AssistantRequest;
     const message = body.message?.trim();
 
     if (!message) {
-      return NextResponse.json({ error: "Enter a question for the assistant" }, { status: 400 });
+      return NextResponse.json({ error: "Enter a question for support" }, { status: 400 });
     }
 
     if (message.length > 2000) {
       return NextResponse.json({ error: "Please keep your question under 2,000 characters" }, { status: 400 });
     }
 
-    const apiKey = process.env.OPENAI_API_KEY;
-    if (!apiKey) {
-      return NextResponse.json(
-        { error: "The AI assistant is not configured yet. Add OPENAI_API_KEY to the server environment." },
-        { status: 503 },
-      );
-    }
-
     const sql = getDatabase();
-    let conversationId = crypto.randomUUID();
-    if (body.conversationId && isUuid(body.conversationId)) {
-      const [ownedConversation] = await sql`
-        SELECT id FROM assistant_conversations
-        WHERE id = ${body.conversationId} AND user_id = ${access.user.id}
-        LIMIT 1
-      `;
-      if (ownedConversation) conversationId = body.conversationId;
-    }
 
-    await sql`
-      INSERT INTO assistant_conversations (id, user_id)
-      VALUES (${conversationId}, ${access.user.id})
-      ON CONFLICT (id) DO UPDATE SET updated_at = NOW()
-      WHERE assistant_conversations.user_id = EXCLUDED.user_id
-    `;
-    await sql`
-      INSERT INTO assistant_messages (conversation_id, role, content)
-      VALUES (${conversationId}, 'user', ${message})
-    `;
-
-    const history = (await getConversationMessages(conversationId)).reverse();
+    // 1. Fetch live services & pricing from the database
     const activeTranscriptOptions = await sql`
-      SELECT label, amount_ngn AS amount
+      SELECT label, amount_ngn AS amount, category, requires_dhl AS "requiresDhl"
       FROM transcript_options
       WHERE is_active = TRUE
-      ORDER BY display_order
+      ORDER BY display_order, label
     `;
-    const knowledge = [
-      "TranscriptPoint helps alumni request academic transcripts and related documents.",
-      `Available services: ${activeTranscriptOptions.map((option) => `${option.label} (N${Number(option.amount).toLocaleString("en-NG")})`).join(", ")}.`,
-      "Hardcopy transcript requests require DHL delivery and a destination continent, country, and state or province.",
-      "DHL destination options and prices are loaded from the database. If a destination has no configured price, advise the user to contact support rather than estimating a fee.",
-    ].join("\n");
 
-    const aiResponse = await fetch("https://api.openai.com/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: process.env.OPENAI_MODEL || "gpt-4o-mini",
-        temperature: 0.3,
-        messages: [
-          {
-            role: "system",
-            content: `You are TranscriptPoint AI Assistant. Answer clearly and briefly using the verified context below. Do not invent prices, processing times, policies, or personal records. If the question requires an action, direct the user to the transcript request form.\n\nVerified context:\n${knowledge}`,
+    // 2. Fetch sample DHL rates from database
+    const dhlSampleRates = await sql`
+      SELECT country_name AS country, state_name AS state, price_kobo AS price
+      FROM dhl_delivery_rates
+      WHERE price_kobo IS NOT NULL
+      ORDER BY country_name, state_name
+      LIMIT 10
+    `;
+
+    // 3. If user is logged in, fetch their recent request status from database
+    let userRequestsContext = "";
+    if (user?.id) {
+      try {
+        const userRecentRequests = await sql`
+          SELECT id, campus, transcript_format AS "format", status, payment_status AS "paymentStatus",
+                 matriculation_number AS "matricNumber", created_at AS "createdAt"
+          FROM transcript_requests
+          WHERE user_id = ${user.id}
+          ORDER BY created_at DESC
+          LIMIT 3
+        `;
+        if (userRecentRequests.length > 0) {
+          userRequestsContext = `User's logged requests in database: ${JSON.stringify(userRecentRequests)}`;
+        }
+      } catch {
+        // user requests table might be empty or error handled safely
+      }
+    }
+
+    // Build database knowledge summary
+    const servicesList = activeTranscriptOptions
+      .map((opt) => `• ${opt.label}: ₦${Number(opt.amount).toLocaleString("en-NG")} (${opt.category}${opt.requiresDhl ? ", requires DHL" : ""})`)
+      .join("\n");
+
+    const sampleDhlText = dhlSampleRates
+      .map((rate) => `• ${rate.country} (${rate.state}): ₦${(Number(rate.price) / 100).toLocaleString("en-NG")}`)
+      .join("\n");
+
+    const lower = message.toLowerCase();
+
+    // Check specifically for: "i applied for my degree transcript and yet have not received it" or similar inquiries
+    const isAppliedNotReceivedQuestion =
+      (lower.includes("applied") || lower.includes("ordered") || lower.includes("requested") || lower.includes("paid")) &&
+      (lower.includes("not received") || lower.includes("haven't received") || lower.includes("have not received") || lower.includes("yet to receive") || lower.includes("still waiting") || lower.includes("not seen") || lower.includes("not got") || lower.includes("not get") || lower.includes("delay"));
+
+    // Check for general processing time questions
+    const isProcessingTimeQuestion =
+      (lower.includes("processing") || lower.includes("ready") || lower.includes("how long") || lower.includes("when will") || lower.includes("duration") || lower.includes("timeline")) &&
+      (lower.includes("transcript") || lower.includes("english proficiency") || lower.includes("proficiency") || lower.includes("request") || lower.includes("document"));
+
+    let directAnswer: string | null = null;
+
+    if (isAppliedNotReceivedQuestion) {
+      directAnswer =
+        "Ooh! Sorry about that! It is not yet up to two weeks, but you will surely get it soon.\n\n" +
+        "Standard degree transcript processing and verification at the university records office takes two weeks+ (14 to 21 working days) from when your payment was verified.\n\n" +
+        "• If you opted for Official Softcopy: It will be electronically transmitted to your recipient institution or email as soon as processing completes.\n" +
+        "• If you opted for Hardcopy delivery: DHL tracking details will be dispatched immediately to your phone and email once picked up from campus.\n\n" +
+        "You can also sign in to check your live real-time progress under 'My Dashboard'. We are monitoring every batch closely!";
+    } else if (isProcessingTimeQuestion) {
+      directAnswer =
+        "Processing of your academic transcript or English proficiency document is typically ready in two weeks+ (14 to 21 working days) from the date payment is confirmed and academic records are verified at your campus.\n\n" +
+        "You can track the live status anytime under 'My Dashboard'. Once processing is completed, you will receive an immediate email notification with your dispatch details or official softcopy link.";
+    }
+
+    // Save conversation in DB if conversationId is valid
+    let conversationId = body.conversationId && isUuid(body.conversationId) ? body.conversationId : crypto.randomUUID();
+    try {
+      await sql`
+        INSERT INTO assistant_conversations (id, user_id)
+        VALUES (${conversationId}, ${user?.id ?? null})
+        ON CONFLICT (id) DO UPDATE SET updated_at = NOW()
+      `;
+      await sql`
+        INSERT INTO assistant_messages (conversation_id, role, content)
+        VALUES (${conversationId}, 'user', ${message})
+      `;
+    } catch {
+      // conversation tables error won't break the response
+    }
+
+    const apiKey = process.env.OPENAI_API_KEY;
+
+    let finalAnswer = directAnswer;
+
+    if (!finalAnswer && apiKey) {
+      try {
+        const history = (await getConversationMessages(conversationId)).reverse();
+        const systemPrompt = `You are the TranscriptPoint Support Assistant. Answer accurately, courteously, and helpfully using exclusively verified data from our database:
+
+Database Services & Official Fees:
+${servicesList}
+
+Sample Verified DHL Delivery Rates:
+${sampleDhlText}
+
+Processing Timeline Policy:
+- Official processing of transcript or English proficiency requests is ready in two weeks+ (14 to 21 working days).
+- Softcopy documents are transmitted directly to the recipient institution or applicant.
+- Hardcopy documents are dispatched via DHL to the verified destination address once processed.
+
+${userRequestsContext ? `Verified Active User Records:\n${userRequestsContext}` : ""}
+
+Rules:
+1. Always state that processing of transcripts or English proficiency takes two weeks+ (14-21 working days) when asked about completion, readiness, or timelines.
+2. Only quote official prices from the database list above.
+3. If the user wants to initiate a new request, direct them to click "Get Started" or visit "/request".
+4. Be brief, professional, and clear.`;
+
+        const aiResponse = await fetch("https://api.openai.com/v1/chat/completions", {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${apiKey}`,
+            "Content-Type": "application/json",
           },
-          ...history,
-        ],
-      }),
-    });
+          body: JSON.stringify({
+            model: process.env.OPENAI_MODEL || "gpt-4o-mini",
+            temperature: 0.3,
+            messages: [
+              { role: "system", content: systemPrompt },
+              ...history,
+            ],
+          }),
+        });
 
-    if (!aiResponse.ok) {
-      console.error("OpenAI assistant request failed", await aiResponse.text());
-      return NextResponse.json({ error: "The assistant is temporarily unavailable. Please try again." }, { status: 502 });
+        if (aiResponse.ok) {
+          const result = (await aiResponse.json()) as {
+            choices?: Array<{ message?: { content?: string } }>;
+          };
+          finalAnswer = result.choices?.[0]?.message?.content?.trim() || null;
+        }
+      } catch (err) {
+        console.error("AI completion error, using database fallback", err);
+      }
     }
 
-    const result = (await aiResponse.json()) as {
-      choices?: Array<{ message?: { content?: string } }>;
-    };
-    const answer = result.choices?.[0]?.message?.content?.trim();
-
-    if (!answer) {
-      return NextResponse.json({ error: "The assistant returned an empty answer. Please try again." }, { status: 502 });
+    // Comprehensive database-backed rule engine fallback if AI service key is absent or unreachable
+    if (!finalAnswer) {
+      if (lower.includes("price") || lower.includes("cost") || lower.includes("how much") || lower.includes("fee") || lower.includes("amount") || lower.includes("services")) {
+        finalAnswer = `Here are the official fees and services configured in our database:\n\n${servicesList}\n\nYou can select any of these directly on the Request page (/request).`;
+      } else if (lower.includes("dhl") || lower.includes("delivery") || lower.includes("shipping")) {
+        finalAnswer = `Hardcopy transcript delivery is handled securely via DHL. Delivery rates are calculated based on your destination country and state:\n\n${sampleDhlText}\n\nFor hardcopy deliveries outside Nigeria, rates are set according to DHL zone tariffs configured in the portal database.`;
+      } else if (lower.includes("track") || lower.includes("status") || lower.includes("check")) {
+        if (userRequestsContext) {
+          finalAnswer = `Here is your recent request information from our database:\n${userRequestsContext}\n\nYou can also view full tracking details under 'My Dashboard'.`;
+        } else {
+          finalAnswer = "You can track the progress of your transcript or document request anytime in your dashboard under 'Track Request' or 'My Dashboard'. Make sure to sign in with your student/user account.";
+        }
+      } else {
+        finalAnswer = `Welcome to TranscriptPoint Support! We provide end-to-end academic transcript processing, English proficiency certificates, and DHL delivery across all accredited campuses.\n\n` +
+          `• Document Processing Timeline: Standard processing is ready in two weeks+ (14 to 21 working days).\n` +
+          `• Services Available: Official Softcopy, Hardcopy via DHL, English Proficiency, and Verification.\n` +
+          `• To start a request: Visit our New Request page (/request) or click 'Get Started'.\n\n` +
+          `How may we assist you today?`;
+      }
     }
 
-    await sql`
-      INSERT INTO assistant_messages (conversation_id, role, content)
-      VALUES (${conversationId}, 'assistant', ${answer})
-    `;
-    await sql`
-      UPDATE assistant_conversations SET updated_at = NOW() WHERE id = ${conversationId}
-    `;
+    try {
+      await sql`
+        INSERT INTO assistant_messages (conversation_id, role, content)
+        VALUES (${conversationId}, 'assistant', ${finalAnswer})
+      `;
+      await sql`
+        UPDATE assistant_conversations SET updated_at = NOW() WHERE id = ${conversationId}
+      `;
+    } catch {
+      // ignore
+    }
 
-    return NextResponse.json({ conversationId, answer });
+    return NextResponse.json({ conversationId, answer: finalAnswer });
   } catch (error) {
     console.error("Unable to answer assistant message", error);
     return NextResponse.json({ error: "Unable to answer your question right now" }, { status: 500 });
   }
-}
+}

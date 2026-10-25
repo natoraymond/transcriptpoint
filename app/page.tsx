@@ -4,6 +4,8 @@ import type { ChangeEvent, FormEvent, ReactNode } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import ChatSupportModal from "./components/chat-support-modal";
+import RoleAuthModal from "./components/role-auth-modal";
 import UniversalNavbar from "./components/universal-navbar";
 
 type TranscriptOption = {
@@ -17,6 +19,10 @@ type TranscriptOption = {
 
 function LandingPage({ onGetStarted }: { onGetStarted: () => void }) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [authModalRole, setAuthModalRole] = useState<"user" | "admin" | "super_admin">("user");
+  const [isSupportModalOpen, setIsSupportModalOpen] = useState(false);
+  const [supportInitialQuestion, setSupportInitialQuestion] = useState("");
 
   const steps = [
     {
@@ -69,17 +75,53 @@ function LandingPage({ onGetStarted }: { onGetStarted: () => void }) {
         <nav className="hidden items-center gap-9 md:flex" aria-label="Main navigation">
           <a href="#how-it-works" className="text-sm font-medium text-[#536661] transition hover:text-[#173d35]">How it works</a>
           <a href="#why-transcriptpoint" className="text-sm font-medium text-[#536661] transition hover:text-[#173d35]">Why TranscriptPoint</a>
-          <Link href="/assistant" className="text-sm font-medium text-[#536661] transition hover:text-[#173d35]">Help &amp; support</Link>
+          <button
+            type="button"
+            onClick={() => {
+              setSupportInitialQuestion("");
+              setIsSupportModalOpen(true);
+            }}
+            className="inline-flex items-center gap-1.5 text-sm font-medium text-[#536661] transition hover:text-[#173d35]"
+          >
+            <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+            Chat with support
+          </button>
         </nav>
 
-        <div className="flex items-center gap-1.5 sm:gap-3">
-          <Link href="/sign-in" className="rounded-full px-2.5 py-1.5 text-xs font-semibold text-[#173c5c] transition hover:bg-[#edf2e8] hover:text-[#12314a] sm:px-3.5 sm:py-2">
+        <div className="flex items-center gap-1.5 sm:gap-2.5">
+          <button
+            type="button"
+            onClick={() => {
+              setSupportInitialQuestion("");
+              setIsSupportModalOpen(true);
+            }}
+            className="hidden sm:inline-flex items-center gap-1.5 rounded-full border border-emerald-300 bg-white px-3 py-1.5 text-xs font-semibold text-[#173d35] shadow-sm transition hover:bg-emerald-50 hover:border-emerald-400"
+          >
+            <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+            <span>Chat with support</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setAuthModalRole("user");
+              setIsAuthModalOpen(true);
+            }}
+            className="hidden sm:inline-flex rounded-full px-2.5 py-1.5 text-xs font-semibold text-[#173c5c] transition hover:bg-[#edf2e8] hover:text-[#12314a] sm:px-3 sm:py-2"
+          >
             Sign in
-          </Link>
-          <Link href="/admin" aria-label="Open admin dashboard" className="hidden sm:inline-block rounded-full px-3 py-2 text-xs font-semibold text-[#536661] transition hover:bg-[#edf2e8] hover:text-[#173d35] sm:text-sm sm:px-4 sm:py-2.5">
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setAuthModalRole("admin");
+              setIsAuthModalOpen(true);
+            }}
+            aria-label="Open admin sign in"
+            className="hidden md:inline-block rounded-full px-2.5 py-2 text-xs font-semibold text-[#536661] transition hover:bg-[#edf2e8] hover:text-[#173d35] sm:text-xs sm:px-3 sm:py-2"
+          >
             Admin
-          </Link>
-          <button type="button" onClick={onGetStarted} className="inline-flex items-center gap-1.5 rounded-full bg-[#173d35] px-3.5 py-2 text-xs font-semibold text-white shadow-lg shadow-[#173d35]/15 transition hover:-translate-y-0.5 hover:bg-[#245246] sm:gap-2 sm:px-5 sm:py-3 sm:text-sm">
+          </button>
+          <button type="button" onClick={onGetStarted} className="hidden sm:inline-flex items-center gap-1.5 rounded-full bg-[#173d35] px-3.5 py-2 text-xs font-semibold text-white shadow-lg shadow-[#173d35]/15 transition hover:-translate-y-0.5 hover:bg-[#245246] sm:gap-2 sm:px-4 sm:py-2.5 sm:text-xs">
             <span>Get started</span> <span aria-hidden="true">↗</span>
           </button>
 
@@ -106,13 +148,17 @@ function LandingPage({ onGetStarted }: { onGetStarted: () => void }) {
         {mobileMenuOpen && (
           <div className="absolute left-4 right-4 top-full mt-2 rounded-2xl border border-slate-200 bg-white/95 p-4 shadow-2xl backdrop-blur-md md:hidden z-30">
             <nav className="flex flex-col space-y-2.5 text-sm font-medium text-slate-700">
-              <Link
-                href="/request"
-                onClick={() => setMobileMenuOpen(false)}
-                className="rounded-xl bg-[#173d35] px-3.5 py-2.5 font-semibold text-white shadow-sm transition hover:bg-[#245246]"
+              <button
+                type="button"
+                onClick={() => {
+                  setMobileMenuOpen(false);
+                  onGetStarted();
+                }}
+                className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#173d35] px-4 py-3 font-semibold text-white shadow-md shadow-[#173d35]/20 transition hover:bg-[#245246]"
               >
-                Start Transcript Request ↗
-              </Link>
+                <span>Get started</span>
+                <span aria-hidden="true">↗</span>
+              </button>
               <a
                 href="#how-it-works"
                 onClick={() => setMobileMenuOpen(false)}
@@ -127,28 +173,44 @@ function LandingPage({ onGetStarted }: { onGetStarted: () => void }) {
               >
                 Why TranscriptPoint
               </a>
-              <Link
-                href="/assistant"
-                onClick={() => setMobileMenuOpen(false)}
-                className="rounded-xl px-3 py-2 transition hover:bg-slate-100 hover:text-[#173d35]"
+              <button
+                type="button"
+                onClick={() => {
+                  setMobileMenuOpen(false);
+                  setSupportInitialQuestion("");
+                  setIsSupportModalOpen(true);
+                }}
+                className="flex items-center justify-between rounded-xl px-3 py-2 text-left transition hover:bg-slate-100 hover:text-[#173d35]"
               >
-                Help &amp; support
-              </Link>
+                <span className="flex items-center gap-2">
+                  <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+                  <span>Chat with support</span>
+                </span>
+                <span className="text-xs text-slate-400">→</span>
+              </button>
               <div className="border-t border-slate-100 pt-2 grid grid-cols-2 gap-2">
-                <Link
-                  href="/sign-in"
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="rounded-xl border border-slate-200 px-3 py-2 text-center text-xs font-semibold text-slate-800 transition hover:bg-slate-50"
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMobileMenuOpen(false);
+                    setAuthModalRole("user");
+                    setIsAuthModalOpen(true);
+                  }}
+                  className="rounded-xl border border-slate-200 px-3 py-2.5 text-center text-xs font-semibold text-slate-800 shadow-sm transition hover:bg-slate-50"
                 >
                   Sign in
-                </Link>
-                <Link
-                  href="/admin"
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="rounded-xl border border-slate-200 px-3 py-2 text-center text-xs font-semibold text-slate-800 transition hover:bg-slate-50"
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMobileMenuOpen(false);
+                    setAuthModalRole("admin");
+                    setIsAuthModalOpen(true);
+                  }}
+                  className="rounded-xl border border-slate-200 px-3 py-2.5 text-center text-xs font-semibold text-slate-800 shadow-sm transition hover:bg-slate-50"
                 >
                   Admin portal
-                </Link>
+                </button>
               </div>
             </nav>
           </div>
@@ -174,6 +236,17 @@ function LandingPage({ onGetStarted }: { onGetStarted: () => void }) {
             <div className="mt-7 sm:mt-9 flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
               <button type="button" onClick={onGetStarted} className="group inline-flex items-center justify-center gap-2.5 rounded-full bg-[#173d35] px-6 py-3.5 text-sm sm:text-[15px] sm:px-7 sm:py-4 font-semibold text-white shadow-[0_14px_30px_rgba(23,61,53,.18)] transition hover:-translate-y-0.5 hover:bg-[#245246]">
                 Get started <span className="transition-transform group-hover:translate-x-1" aria-hidden="true">→</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setSupportInitialQuestion("I applied for my degree transcript and yet have not received it");
+                  setIsSupportModalOpen(true);
+                }}
+                className="inline-flex items-center justify-center gap-2 rounded-full border border-slate-300 bg-white px-5 py-3.5 text-sm font-semibold text-[#173d35] shadow-sm transition hover:bg-slate-50 hover:shadow"
+              >
+                <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+                Chat with support <span aria-hidden="true">💬</span>
               </button>
               <a href="#how-it-works" className="inline-flex items-center justify-center gap-2 rounded-full border border-slate-200 bg-white/80 px-5 py-3 text-sm font-semibold text-[#456058] transition hover:bg-white hover:text-[#173d35] sm:border-0 sm:bg-transparent sm:px-4 sm:py-3">
                 See how it works <span aria-hidden="true">↓</span>
@@ -294,6 +367,37 @@ function LandingPage({ onGetStarted }: { onGetStarted: () => void }) {
         </section>
       </main>
 
+      {/* Compulsory Role-Based Authentication Pop-up Form Modal */}
+      <RoleAuthModal
+        isOpen={isAuthModalOpen}
+        onClose={() => setIsAuthModalOpen(false)}
+        initialRole={authModalRole}
+      />
+
+      {/* Floating Action Button for Chat with Support */}
+      <button
+        type="button"
+        onClick={() => {
+          setSupportInitialQuestion("");
+          setIsSupportModalOpen(true);
+        }}
+        aria-label="Open live chat with support"
+        className="fixed bottom-6 right-6 z-40 flex items-center gap-2.5 rounded-full bg-[#173d35] px-4 py-3 text-xs sm:text-sm font-semibold text-white shadow-[0_10px_25px_rgba(23,61,53,0.35)] transition hover:-translate-y-0.5 hover:bg-[#245246] hover:shadow-xl sm:px-5 sm:py-3.5"
+      >
+        <span className="relative flex h-2.5 w-2.5">
+          <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
+          <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-emerald-500" />
+        </span>
+        <span>Chat with support</span>
+        <span aria-hidden="true" className="text-base leading-none">💬</span>
+      </button>
+
+      {/* Interactive Chat with Support Modal */}
+      <ChatSupportModal
+        isOpen={isSupportModalOpen}
+        onClose={() => setIsSupportModalOpen(false)}
+        initialQuestion={supportInitialQuestion}
+      />
     </div>
   );
 }

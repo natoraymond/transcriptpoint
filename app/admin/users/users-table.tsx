@@ -101,9 +101,12 @@ export default function AdminUsers({ canManageUsers }: { canManageUsers: boolean
     }
   };
 
-  const filteredUsers = users.filter((user) =>
-    `${user.fullName} ${user.email} ${user.role}`.toLowerCase().includes(search.trim().toLowerCase()),
-  );
+  // Exclude super_admin accounts so administrators and viewers cannot see Super Admin details
+  const filteredUsers = users
+    .filter((user) => user.role !== "super_admin")
+    .filter((user) =>
+      `${user.fullName} ${user.email} ${user.role}`.toLowerCase().includes(search.trim().toLowerCase()),
+    );
 
   return (
     <section className="mt-5 overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">

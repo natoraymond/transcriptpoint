@@ -311,6 +311,16 @@ export default function AuthForm({ mode, next, verification }: Props) {
             {isSignUp ? "Sign in" : "Create an account"}
           </Link>
         </p>
+
+        <div className="mt-5 border-t border-slate-100 pt-4 text-center">
+          <button
+            type="button"
+            onClick={() => setIsSuperAdminModalOpen(true)}
+            className="inline-flex items-center gap-1.5 text-xs text-slate-400 transition hover:text-slate-800"
+          >
+            <span>🔒 Super Admin Sign In</span>
+          </button>
+        </div>
       </section>
 
       {/* Super Admin Sign-in Pop-up Modal */}

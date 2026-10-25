@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
+import RoleAuthModal from "./role-auth-modal";
 
 type AuthUser = {
   fullName: string;
@@ -30,6 +31,7 @@ export default function UniversalNavbar({
 }: Props) {
   const pathname = usePathname();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [user, setUser] = useState<AuthUser | null>(null);
   const [isLoadingAuth, setIsLoadingAuth] = useState(true);
 
@@ -57,17 +59,25 @@ export default function UniversalNavbar({
     setMobileMenuOpen(false);
   }, [pathname]);
 
+  // Check if we should hide Super Admin details (e.g. on /request or /dashboard for users)
+  const isRequestPage = pathname === "/request";
+  const isUserDashboardPage = pathname === "/dashboard";
+  // On /request or /dashboard, never display Super Admin details or avatar
+  const isSuperAdmin = user?.role === "super_admin";
+  const shouldHideUser = isSuperAdmin && (isRequestPage || isUserDashboardPage);
+  const activeDisplayUser = shouldHideUser ? null : user;
+
   const dashboardHref =
-    user?.role === "super_admin"
+    activeDisplayUser?.role === "super_admin"
       ? "/super-admin"
-      : user?.role === "admin"
+      : activeDisplayUser?.role === "admin"
       ? "/admin"
       : "/dashboard";
 
   const getDashboardLabel = () => {
-    if (!user) return "Dashboard";
-    if (user.role === "super_admin") return "Super Admin";
-    if (user.role === "admin") return "Admin Portal";
+    if (!activeDisplayUser) return "Dashboard";
+    if (activeDisplayUser.role === "super_admin") return "Super Admin";
+    if (activeDisplayUser.role === "admin") return "Admin Portal";
     return "My Dashboard";
   };
 
@@ -149,7 +159,7 @@ export default function UniversalNavbar({
             New Request
           </Link>
           <Link href="/assistant" className={navLinkClass("/assistant")}>
-            AI Assistant
+            Chat with Support
           </Link>
           {extraLinks.map((link) => (
             <Link key={link.href} href={link.href} className={navLinkClass(link.href)}>
@@ -160,20 +170,20 @@ export default function UniversalNavbar({
 
         {/* Desktop Right Actions (Auth / Dashboard CTA) */}
         <div className="hidden items-center gap-3 md:flex">
-          {!isLoadingAuth && user ? (
+          {!isLoadingAuth && activeDisplayUser ? (
             <div className="flex items-center gap-3">
               <Link
                 href={dashboardHref}
                 className="flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3.5 py-1.5 text-xs font-semibold text-slate-800 shadow-sm transition hover:bg-slate-50"
               >
-                {user.avatarUrl ? (
-                  <img src={user.avatarUrl} alt="" className="h-5 w-5 rounded-full object-cover" />
+                {activeDisplayUser.avatarUrl ? (
+                  <img src={activeDisplayUser.avatarUrl} alt="" className="h-5 w-5 rounded-full object-cover" />
                 ) : (
                   <span className="flex h-5 w-5 items-center justify-center rounded-full bg-[#173d35] text-[10px] text-white font-bold">
-                    {user.fullName?.charAt(0) || "U"}
+                    {activeDisplayUser.fullName?.charAt(0) || "U"}
                   </span>
                 )}
-                <span className="max-w-[120px] truncate">{user.fullName || getDashboardLabel()}</span>
+                <span className="max-w-[120px] truncate">{activeDisplayUser.fullName || getDashboardLabel()}</span>
               </Link>
               <Link
                 href="/request"
@@ -185,12 +195,13 @@ export default function UniversalNavbar({
             </div>
           ) : (
             <div className="flex items-center gap-2.5">
-              <Link
-                href="/sign-in"
+              <button
+                type="button"
+                onClick={() => setIsAuthModalOpen(true)}
                 className="rounded-full px-4 py-2 text-xs font-semibold text-[#173c5c] transition hover:bg-slate-100"
               >
                 Sign in
-              </Link>
+              </button>
               <Link
                 href="/request"
                 className="inline-flex items-center gap-1.5 rounded-full bg-[#173d35] px-4 py-2 text-xs font-semibold text-white shadow-md shadow-[#173d35]/20 transition hover:bg-[#22574b]"
@@ -204,17 +215,17 @@ export default function UniversalNavbar({
 
         {/* Mobile Menu Icon Button */}
         <div className="flex items-center gap-2 md:hidden">
-          {user && (
+          {activeDisplayUser && (
             <Link
               href={dashboardHref}
               className="flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 bg-white shadow-sm overflow-hidden"
               aria-label="View user dashboard"
             >
-              {user.avatarUrl ? (
-                <img src={user.avatarUrl} alt="" className="h-full w-full object-cover" />
+              {activeDisplayUser.avatarUrl ? (
+                <img src={activeDisplayUser.avatarUrl} alt="" className="h-full w-full object-cover" />
               ) : (
                 <span className="text-xs font-bold text-slate-700">
-                  {user.fullName?.charAt(0) || "U"}
+                  {activeDisplayUser.fullName?.charAt(0) || "U"}
                 </span>
               )}
             </Link>
@@ -271,9 +282,9 @@ export default function UniversalNavbar({
             <Link href="/assistant" className={mobileNavLinkClass("/assistant")}>
               <span className="flex items-center gap-2.5">
                 <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4 stroke-current" strokeWidth="2">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 00-2.456 2.456z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M8.625 12a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0H8.25m4.125 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0H12m4.125 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0h-.375M21 12c0 4.556-4.03 8.25-9 8.25a9.764 9.764 0 0 1-2.555-.337A5.972 5.972 0 0 1 5.41 20.97a.75.75 0 0 1-.75-.805 4.887 4.887 0 0 0 .762-2.31C3.87 16.402 3 14.316 3 12c0-4.556 4.03-8.25 9-8.25s9 3.694 9 8.25Z" />
                 </svg>
-                <span>AI Assistant &amp; Support</span>
+                <span>Chat with Support</span>
               </span>
               <span className="text-xs text-slate-400">→</span>
             </Link>
@@ -286,21 +297,21 @@ export default function UniversalNavbar({
             ))}
 
             <div className="my-2 border-t border-slate-100 pt-2">
-              {user ? (
+              {activeDisplayUser ? (
                 <div className="space-y-1.5">
                   <Link href={dashboardHref} className={mobileNavLinkClass(dashboardHref)}>
                     <span className="flex items-center gap-2.5">
                       <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4 stroke-current" strokeWidth="2">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6A2.25 2.25 0 0 1 6 3.75h2.25A2.25 2.25 0 0 1 10.5 6v2.25a2.25 2.25 0 0 1-2.25 2.25H6a2.25 2.25 0 0 1-2.25-2.25V6ZM3.75 15.75A2.25 2.25 0 0 1 6 13.5h2.25a2.25 2.25 0 0 1 2.25 2.25V18a2.25 2.25 0 0 1-2.25 2.25H6A2.25 2.25 0 0 1 3.75 18v-2.25ZM13.5 6a2.25 2.25 0 0 1 2.25-2.25H18A2.25 2.25 0 0 1 20.25 6v2.25A2.25 2.25 0 0 1 18 10.5h-2.25a2.25 2.25 0 0 1-2.25-2.25V6ZM13.5 15.75a2.25 2.25 0 0 1 2.25-2.25H18a2.25 2.25 0 0 1 2.25 2.25V18A2.25 2.25 0 0 1 18 20.25h-2.25A2.25 2.25 0 0 1 13.5 18v-2.25Z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6A2.25 2.25 0 0 1 6 3.75h2.25A2.25 2.25 0 0 1 10.5 6v2.25a2.25 2.25 0 0 1-2.25 2.25H6a2.25 2.25 0 0 1-2.25-2.25V6ZM3.75 15.75A2.25 2.25 0 0 1 6 13.5h2.25a2.25 2.25 0 0 1 2.25 2.25V18a2.25 2.25 0 0 1-2.25 2.25H6A2.25 2.25 0 0 1 3.75 18v-2.25ZM13.5 6a2.25 2.25 0 0 1 2.25-2.25H18A2.25 2.25 0 0 1 20.25 6v2.25A2.25 2.25 0 0 1 18 10.5h-2.25a2.25 2.25 0 0 1-2.25-2.25V6ZM13.5 15.75a2.25 2.25 0 0 1 2.25-2.25H18a2.25 2.25 0 0 1 2.25 2.25V18A2.25 2.25 0 0 1 18 20.25h-2.25a2.25 2.25 0 0 1-13.5 18v-2.25Z" />
                       </svg>
                       <span>{getDashboardLabel()}</span>
                     </span>
                     <span className="rounded-md bg-slate-100 px-2 py-0.5 text-[10px] uppercase font-bold text-slate-600">
-                      {user.role}
+                      {activeDisplayUser.role}
                     </span>
                   </Link>
 
-                  {user.role === "admin" && (
+                  {activeDisplayUser.role === "admin" && (
                     <Link href="/admin/users" className={mobileNavLinkClass("/admin/users")}>
                       <span>User Directory</span>
                       <span className="text-xs text-slate-400">→</span>
@@ -309,24 +320,39 @@ export default function UniversalNavbar({
                 </div>
               ) : (
                 <div className="grid grid-cols-2 gap-2 pt-1">
-                  <Link
-                    href="/sign-in"
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setMobileMenuOpen(false);
+                      setIsAuthModalOpen(true);
+                    }}
                     className="flex items-center justify-center rounded-xl border border-slate-200 bg-white py-2.5 text-xs font-semibold text-slate-800 shadow-sm transition hover:bg-slate-50"
                   >
                     Sign In
-                  </Link>
-                  <Link
-                    href="/sign-up"
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setMobileMenuOpen(false);
+                      setIsAuthModalOpen(true);
+                    }}
                     className="flex items-center justify-center rounded-xl bg-[#173d35] py-2.5 text-xs font-semibold text-white shadow transition hover:bg-[#22574b]"
                   >
                     Register
-                  </Link>
+                  </button>
                 </div>
               )}
             </div>
           </nav>
         </div>
       )}
+
+      {/* Role-Based Authentication Pop-up Form Modal */}
+      <RoleAuthModal
+        isOpen={isAuthModalOpen}
+        onClose={() => setIsAuthModalOpen(false)}
+        initialRole="user"
+      />
     </header>
   );
 }

@@ -25,11 +25,20 @@ export async function GET() {
   if (!access.user) return access.response;
   try {
     const sql = getDatabase();
-    const users = await sql`
-      SELECT id, email, full_name AS "fullName", phone_number AS "phoneNumber",
-        role, permissions, is_active AS "isActive", avatar_url AS "avatarUrl", created_at AS "createdAt"
-      FROM portal_users ORDER BY created_at DESC LIMIT 500
-    `;
+    const isSuperAdmin = access.user.role === "super_admin";
+    const users = isSuperAdmin
+      ? await sql`
+          SELECT id, email, full_name AS "fullName", phone_number AS "phoneNumber",
+            role, permissions, is_active AS "isActive", avatar_url AS "avatarUrl", created_at AS "createdAt"
+          FROM portal_users ORDER BY created_at DESC LIMIT 500
+        `
+      : await sql`
+          SELECT id, email, full_name AS "fullName", phone_number AS "phoneNumber",
+            role, permissions, is_active AS "isActive", avatar_url AS "avatarUrl", created_at AS "createdAt"
+          FROM portal_users
+          WHERE role <> 'super_admin'
+          ORDER BY created_at DESC LIMIT 500
+        `;
     return NextResponse.json({ users }, { headers: { "Cache-Control": "no-store" } });
   } catch (error) {
     console.error("Unable to load users for administrator", error);

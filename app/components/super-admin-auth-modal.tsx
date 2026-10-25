@@ -92,12 +92,12 @@ export default function SuperAdminAuthModal({ isOpen, onClose, triggerContext }:
         role="dialog"
         aria-modal="true"
         aria-labelledby="super-admin-auth-title"
-        className="w-full max-w-md overflow-hidden rounded-[28px] border border-red-200/50 bg-white p-7 shadow-2xl sm:p-8"
+        className="w-full max-w-sm overflow-hidden rounded-[24px] border border-red-200/50 bg-white p-5 shadow-2xl sm:p-6"
       >
         <div className="flex items-start justify-between">
-          <div className="flex items-center gap-3">
-            <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-rose-100 text-rose-700 shadow-sm">
-              <svg viewBox="0 0 24 24" fill="none" className="h-6 w-6 stroke-current" strokeWidth="2">
+          <div className="flex items-center gap-2.5">
+            <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-rose-100 text-rose-700 shadow-sm">
+              <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5 stroke-current" strokeWidth="2">
                 <path
                   strokeLinecap="round"
                   strokeLinejoin="round"
@@ -106,10 +106,10 @@ export default function SuperAdminAuthModal({ isOpen, onClose, triggerContext }:
               </svg>
             </span>
             <div>
-              <p className="text-[10px] font-bold uppercase tracking-[.2em] text-rose-600">
+              <p className="text-[9px] font-bold uppercase tracking-[.2em] text-rose-600">
                 Restricted Access
               </p>
-              <h3 id="super-admin-auth-title" className="text-xl font-bold tracking-tight text-slate-950">
+              <h3 id="super-admin-auth-title" className="text-lg font-bold tracking-tight text-slate-950">
                 Super Admin Verification
               </h3>
             </div>
@@ -118,42 +118,42 @@ export default function SuperAdminAuthModal({ isOpen, onClose, triggerContext }:
             type="button"
             onClick={onClose}
             aria-label="Close dialog"
-            className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700"
+            className="rounded-lg p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-700 text-xs"
           >
             ✕
           </button>
         </div>
 
         {/* Security Alert Banner */}
-        <div className="mt-5 rounded-2xl border border-rose-200 bg-rose-50/80 p-4 text-xs leading-5 text-rose-900">
-          <p className="font-semibold text-rose-800">
+        <div className="mt-3.5 rounded-xl border border-rose-200 bg-rose-50/80 p-3 text-xs leading-relaxed text-rose-900">
+          <p className="font-semibold text-rose-800 text-[11px]">
             🔒 No other roles have access to the Super Admin&apos;s account.
           </p>
-          <p className="mt-1">
+          <p className="mt-0.5 text-[10px]">
             {alertSent
-              ? "A security notification has just been dispatched to the Super Admin's email stating someone is attempting to access this account."
-              : "Dispatched security notification to the Super Admin's email."}
+              ? "Security notification dispatched to the Super Admin's email."
+              : "Notified the Super Admin's email."}
           </p>
-          <p className="mt-2 font-medium text-rose-700">
-            Are you the Super Admin? Please sign in to verify your identity.
+          <p className="mt-1.5 font-medium text-rose-700 text-[11px]">
+            Are you the Super Admin? Sign in to verify your identity.
           </p>
         </div>
 
-        <form onSubmit={handleSignIn} className="mt-5 space-y-4">
-          <label className="block text-xs font-semibold text-slate-700">
+        <form onSubmit={handleSignIn} className="mt-4 space-y-3">
+          <label className="block text-[11px] font-semibold text-slate-700">
             Super Admin Email
             <input
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="form-input mt-1.5"
-              placeholder="superadmin@example.com"
-              required
+              placeholder="superadmin@domain.com"
+              className="form-input mt-1 py-2 text-xs"
               autoComplete="email"
+              required
             />
           </label>
 
-          <label className="block text-xs font-semibold text-slate-700">
+          <label className="block text-[11px] font-semibold text-slate-700">
             Password
             <div className="relative mt-1.5">
               <input

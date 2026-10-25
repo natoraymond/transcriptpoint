@@ -274,6 +274,7 @@ UPDATE dhl_delivery_rates
 SET price_kobo = CASE
       WHEN country_code <> 'NG' THEN 6800000
       WHEN state_name IN ('Lagos', 'Federal Capital Territory (Abuja)') THEN 3000000
+      WHEN state_name IN ('Anambra', 'Imo', 'Delta', 'Ebonyi', 'Abia', 'Enugu', 'Rivers', 'Rivers (Port Harcourt)', 'Port Harcourt (Rivers)') THEN 2450000
       ELSE NULL
     END,
     updated_at = NOW();

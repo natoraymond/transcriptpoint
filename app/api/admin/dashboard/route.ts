@@ -17,7 +17,7 @@ export async function GET() {
         SELECT COUNT(*) FILTER (WHERE ${canReadRequests})::int AS "totalRequests",
           COUNT(*) FILTER (WHERE status = 'pending' AND ${canReadRequests})::int AS "pendingRequests",
           COUNT(*) FILTER (WHERE status = 'completed' AND ${canReadRequests})::int AS "completedRequests",
-          COALESCE(SUM(options.amount_ngn) FILTER (WHERE requests.payment_status = 'paid' AND ${canReadPayments}), 0)::numeric AS "paidRevenue"
+          COALESCE(SUM(options.amount_ngn + COALESCE(requests.dhl_delivery_price_kobo, 0) / 100.0) FILTER (WHERE requests.payment_status = 'paid' AND ${canReadPayments}), 0)::numeric AS "paidRevenue"
         FROM transcript_requests requests
         LEFT JOIN transcript_options options ON options.value = requests.transcript_format
       `,
@@ -36,7 +36,7 @@ export async function GET() {
         SELECT requests.id::text AS id,
           COALESCE(requests.payment_reference, requests.reference_number, CONCAT('TP-', requests.id)) AS reference,
           CONCAT_WS(' ', requests.first_name, requests.surname) AS payer,
-          COALESCE(options.amount_ngn, 0)::numeric AS amount,
+          COALESCE(options.amount_ngn + COALESCE(requests.dhl_delivery_price_kobo, 0) / 100.0, 0)::numeric AS amount,
           requests.delivery_method AS method, requests.payment_status AS status,
           requests.created_at AS "createdAt"
         FROM transcript_requests requests
@@ -54,7 +54,7 @@ export async function GET() {
       ` : Promise.resolve([]),
       canReadRequests ? sql`
         SELECT COALESCE(options.category, 'Other') AS label, COUNT(requests.id)::int AS count,
-          COALESCE(SUM(options.amount_ngn) FILTER (WHERE requests.payment_status = 'paid' AND ${canReadPayments}), 0)::numeric AS revenue
+          COALESCE(SUM(options.amount_ngn + COALESCE(requests.dhl_delivery_price_kobo, 0) / 100.0) FILTER (WHERE requests.payment_status = 'paid' AND ${canReadPayments}), 0)::numeric AS revenue
         FROM transcript_requests requests
         LEFT JOIN transcript_options options ON options.value = requests.transcript_format
         GROUP BY options.category ORDER BY count DESC

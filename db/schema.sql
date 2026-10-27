@@ -2,7 +2,7 @@ CREATE TABLE IF NOT EXISTS transcript_options (
   id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
   value TEXT NOT NULL UNIQUE,
   label TEXT NOT NULL,
-  amount_ngn INTEGER NOT NULL CHECK (amount_ngn > 0),
+  amount_ngn INTEGER NOT NULL CHECK (amount_ngn >= 0),
   category TEXT NOT NULL DEFAULT 'Other services',
   requires_dhl BOOLEAN NOT NULL DEFAULT FALSE,
   display_order INTEGER NOT NULL DEFAULT 0,
@@ -98,8 +98,8 @@ INSERT INTO transcript_options (value, label, amount_ngn, category, requires_dhl
   ('softcopy-transcript-english-proficiency-outside-nigeria', 'Softcopy Transcript / English Proficiency (Outside Nigeria)', 34000, 'Softcopy transcript', FALSE, 40, TRUE),
   ('softcopy-english-proficiency-nigeria', 'Softcopy English Proficiency (Nigeria)', 8000, 'Softcopy transcript', FALSE, 50, TRUE),
   ('students-softcopy', 'Students Softcopy', 7000, 'Other services', FALSE, 60, TRUE),
-  ('hardcopy-nigeria', 'Hardcopy (Nigeria)', 30000, 'Hardcopy transcript', TRUE, 70, TRUE),
-  ('hardcopy-outside-nigeria', 'Hardcopy (Outside Nigeria) - DHL delivery', 68000, 'Hardcopy transcript', TRUE, 80, TRUE),
+  ('hardcopy-transcript', 'Hardcopy Transcript', 0, 'Hardcopy transcript', TRUE, 70, TRUE),
+  ('hardcopy-outside-nigeria', 'Hardcopy (Outside Nigeria, legacy request)', 68000, 'Legacy', FALSE, 930, FALSE),
   ('transcript-verification', 'Transcript Verification', 12000, 'Other services', FALSE, 90, TRUE),
   ('certificate-verification', 'Certificate Verification', 12000, 'Other services', FALSE, 100, TRUE),
   ('official-softcopy', 'Official Softcopy (legacy request)', 29000, 'Legacy', FALSE, 900, FALSE),
@@ -283,7 +283,9 @@ UPDATE transcript_options
 SET is_active = value NOT IN (
       'official-softcopy',
       'students-official-softcopy-outside-nigeria',
-      'english-proficiency'
+      'english-proficiency',
+      'hardcopy-nigeria',
+      'hardcopy-outside-nigeria'
     ),
     updated_at = NOW();
 

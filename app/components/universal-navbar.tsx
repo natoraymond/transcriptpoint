@@ -21,6 +21,8 @@ type Props = {
   extraLinks?: Array<{ label: string; href: string }>;
   /** Theme style: "emerald" for public/landing, "slate" for dashboards/admin, "clean" for auth */
   theme?: "emerald" | "slate" | "white";
+  /** Explicitly hide user profile and details in navbar */
+  hideUser?: boolean;
 };
 
 export default function UniversalNavbar({
@@ -28,6 +30,7 @@ export default function UniversalNavbar({
   badge,
   extraLinks = [],
   theme = "white",
+  hideUser = false,
 }: Props) {
   const pathname = usePathname();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -54,17 +57,12 @@ export default function UniversalNavbar({
     };
   }, [pathname]);
 
-  // Close mobile menu on page navigation
-  useEffect(() => {
-    setMobileMenuOpen(false);
-  }, [pathname]);
-
-  // Check if we should hide Super Admin details (e.g. on /request or /dashboard for users)
+  // Check if we should hide user details (e.g. on /payment, /request, or /dashboard for users)
+  const isPaymentPage = pathname === "/payment" || pathname?.startsWith("/payment");
   const isRequestPage = pathname === "/request";
   const isUserDashboardPage = pathname === "/dashboard";
-  // On /request or /dashboard, never display Super Admin details or avatar
   const isSuperAdmin = user?.role === "super_admin";
-  const shouldHideUser = isSuperAdmin && (isRequestPage || isUserDashboardPage);
+  const shouldHideUser = hideUser || isPaymentPage || (isSuperAdmin && (isRequestPage || isUserDashboardPage));
   const activeDisplayUser = shouldHideUser ? null : user;
 
   const dashboardHref =
@@ -105,6 +103,8 @@ export default function UniversalNavbar({
     slate: "border-b border-slate-800 bg-[#0f172a] text-white shadow-md",
     emerald: "border-b border-[#dce5d7] bg-[#f8f8f5]/95 backdrop-blur-md text-[#142a27]",
   }[theme];
+
+  const signInUrl = pathname ? `/sign-in?next=${encodeURIComponent(pathname)}` : "/sign-in";
 
   return (
     <header className={`sticky top-0 z-40 w-full transition-all ${themeContainerStyles}`}>
@@ -195,13 +195,12 @@ export default function UniversalNavbar({
             </div>
           ) : (
             <div className="flex items-center gap-2.5">
-              <button
-                type="button"
-                onClick={() => setIsAuthModalOpen(true)}
+              <Link
+                href={signInUrl}
                 className="rounded-full px-4 py-2 text-xs font-semibold text-[#173c5c] transition hover:bg-slate-100"
               >
                 Sign in
-              </button>
+              </Link>
               <Link
                 href="/request"
                 className="inline-flex items-center gap-1.5 rounded-full bg-[#173d35] px-4 py-2 text-xs font-semibold text-white shadow-md shadow-[#173d35]/20 transition hover:bg-[#22574b]"
@@ -320,26 +319,20 @@ export default function UniversalNavbar({
                 </div>
               ) : (
                 <div className="grid grid-cols-2 gap-2 pt-1">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setMobileMenuOpen(false);
-                      setIsAuthModalOpen(true);
-                    }}
+                  <Link
+                    href={signInUrl}
+                    onClick={() => setMobileMenuOpen(false)}
                     className="flex items-center justify-center rounded-xl border border-slate-200 bg-white py-2.5 text-xs font-semibold text-slate-800 shadow-sm transition hover:bg-slate-50"
                   >
                     Sign In
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setMobileMenuOpen(false);
-                      setIsAuthModalOpen(true);
-                    }}
+                  </Link>
+                  <Link
+                    href={pathname ? `/sign-up?next=${encodeURIComponent(pathname)}` : "/sign-up"}
+                    onClick={() => setMobileMenuOpen(false)}
                     className="flex items-center justify-center rounded-xl bg-[#173d35] py-2.5 text-xs font-semibold text-white shadow transition hover:bg-[#22574b]"
                   >
                     Register
-                  </button>
+                  </Link>
                 </div>
               )}
             </div>
@@ -352,6 +345,7 @@ export default function UniversalNavbar({
         isOpen={isAuthModalOpen}
         onClose={() => setIsAuthModalOpen(false)}
         initialRole="user"
+        next={pathname}
       />
     </header>
   );

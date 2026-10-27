@@ -26,7 +26,7 @@ function receiptHtml(request: Record<string, unknown>, service: string, amount: 
     ["Service", service],
     ["Graduation", `${request.monthOfGraduation} ${request.yearOfGraduation}`],
     ["Recipient institution", request.recipientInstitution],
-    ["Delivery method", request.deliveryMethod],
+    ["Delivery method", request.deliveryMethod === "dhl" && request.dhlState && request.dhlCountry ? `DHL delivery (${request.dhlState}, ${request.dhlCountry})` : request.deliveryMethod],
     ["Payment reference", reference],
     ["Amount paid", amount],
   ];
@@ -68,6 +68,7 @@ export async function POST(request: Request) {
         matriculation_number AS "matriculationNumber", email, transcript_format AS "transcriptFormat",
         month_of_graduation AS "monthOfGraduation", year_of_graduation AS "yearOfGraduation",
         recipient_institution AS "recipientInstitution", delivery_method AS "deliveryMethod",
+        dhl_delivery_price_kobo AS "dhlDeliveryPriceKobo", dhl_state AS "dhlState", dhl_country AS "dhlCountry",
         payment_status AS "paymentStatus", payment_reference AS "paymentReference",
         payment_email_sent_at AS "paymentEmailSentAt", user_id AS "userId"
       FROM transcript_requests
@@ -92,7 +93,12 @@ export async function POST(request: Request) {
     if (!transcriptOption) {
       return NextResponse.json({ error: "The saved transcript service is invalid" }, { status: 400 });
     }
-    const amountNgn = Number(transcriptOption.amount);
+    const optionAmountNgn = Number(transcriptOption.amount);
+    const dhlDeliveryFeeNgn = savedRequest.deliveryMethod === "dhl" && savedRequest.dhlDeliveryPriceKobo
+      ? Math.round(Number(savedRequest.dhlDeliveryPriceKobo) / 100)
+      : 0;
+    const totalAmountNgn = optionAmountNgn + dhlDeliveryFeeNgn;
+    const totalAmountKobo = (optionAmountNgn * 100) + (savedRequest.deliveryMethod === "dhl" ? Number(savedRequest.dhlDeliveryPriceKobo || 0) : 0);
 
     const verificationResponse = await fetch(
       `https://api.paystack.co/transaction/verify/${encodeURIComponent(reference)}`,
@@ -113,7 +119,7 @@ export async function POST(request: Request) {
 
     if (
       !verificationResponse.ok || !verification.status || transaction?.status !== "success" ||
-      transaction.reference !== reference || transaction.amount !== amountNgn * 100 ||
+      transaction.reference !== reference || transaction.amount !== totalAmountKobo ||
       transaction.currency !== "NGN" || transaction.customer?.email?.toLowerCase() !== String(savedRequest.email).toLowerCase()
     ) {
       return NextResponse.json({ error: "The payment could not be verified for this request" }, { status: 400 });
@@ -134,7 +140,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ paymentConfirmed: true, emailSent: true });
     }
 
-    const amount = formatNaira(amountNgn);
+    const amount = formatNaira(totalAmountNgn);
     const resend = new Resend(resendApiKey);
     const { error: emailError } = await resend.emails.send({
       from: emailFrom,

@@ -88,7 +88,12 @@ export async function POST(request: Request) {
 
     // Build database knowledge summary
     const servicesList = activeTranscriptOptions
-      .map((opt) => `• ${opt.label}: ₦${Number(opt.amount).toLocaleString("en-NG")} (${opt.category}${opt.requiresDhl ? ", requires DHL" : ""})`)
+      .map((opt) => {
+        const priceText = Number(opt.amount) === 0 && opt.requiresDhl
+          ? "Calculated based on destination DHL courier rate"
+          : `₦${Number(opt.amount).toLocaleString("en-NG")}`;
+        return `• ${opt.label}: ${priceText} (${opt.category}${opt.requiresDhl ? ", requires DHL destination" : ""})`;
+      })
       .join("\n");
 
     const sampleDhlText = dhlSampleRates

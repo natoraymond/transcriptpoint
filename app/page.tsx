@@ -19,10 +19,11 @@ type TranscriptOption = {
 
 function LandingPage({ onGetStarted }: { onGetStarted: () => void }) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
-  const [authModalRole, setAuthModalRole] = useState<"user" | "admin" | "super_admin">("user");
   const [isSupportModalOpen, setIsSupportModalOpen] = useState(false);
   const [supportInitialQuestion, setSupportInitialQuestion] = useState("");
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [authModalRole, setAuthModalRole] = useState<"user" | "admin" | "super_admin">("user");
+  const [authModalMode, setAuthModalMode] = useState<"sign-in" | "sign-up">("sign-in");
 
   const steps = [
     {
@@ -104,6 +105,7 @@ function LandingPage({ onGetStarted }: { onGetStarted: () => void }) {
             type="button"
             onClick={() => {
               setAuthModalRole("user");
+              setAuthModalMode("sign-in");
               setIsAuthModalOpen(true);
             }}
             className="hidden sm:inline-flex rounded-full px-2.5 py-1.5 text-xs font-semibold text-[#173c5c] transition hover:bg-[#edf2e8] hover:text-[#12314a] sm:px-3 sm:py-2"
@@ -114,6 +116,7 @@ function LandingPage({ onGetStarted }: { onGetStarted: () => void }) {
             type="button"
             onClick={() => {
               setAuthModalRole("admin");
+              setAuthModalMode("sign-in");
               setIsAuthModalOpen(true);
             }}
             aria-label="Open admin sign in"
@@ -194,6 +197,7 @@ function LandingPage({ onGetStarted }: { onGetStarted: () => void }) {
                   onClick={() => {
                     setMobileMenuOpen(false);
                     setAuthModalRole("user");
+                    setAuthModalMode("sign-in");
                     setIsAuthModalOpen(true);
                   }}
                   className="rounded-xl border border-slate-200 px-3 py-2.5 text-center text-xs font-semibold text-slate-800 shadow-sm transition hover:bg-slate-50"
@@ -205,6 +209,7 @@ function LandingPage({ onGetStarted }: { onGetStarted: () => void }) {
                   onClick={() => {
                     setMobileMenuOpen(false);
                     setAuthModalRole("admin");
+                    setAuthModalMode("sign-in");
                     setIsAuthModalOpen(true);
                   }}
                   className="rounded-xl border border-slate-200 px-3 py-2.5 text-center text-xs font-semibold text-slate-800 shadow-sm transition hover:bg-slate-50"
@@ -367,13 +372,6 @@ function LandingPage({ onGetStarted }: { onGetStarted: () => void }) {
         </section>
       </main>
 
-      {/* Compulsory Role-Based Authentication Pop-up Form Modal */}
-      <RoleAuthModal
-        isOpen={isAuthModalOpen}
-        onClose={() => setIsAuthModalOpen(false)}
-        initialRole={authModalRole}
-      />
-
       {/* Floating Action Button for Chat with Support */}
       <button
         type="button"
@@ -397,6 +395,15 @@ function LandingPage({ onGetStarted }: { onGetStarted: () => void }) {
         isOpen={isSupportModalOpen}
         onClose={() => setIsSupportModalOpen(false)}
         initialQuestion={supportInitialQuestion}
+      />
+
+      {/* Role-Based Authentication Pop-up Form Modal */}
+      <RoleAuthModal
+        isOpen={isAuthModalOpen}
+        onClose={() => setIsAuthModalOpen(false)}
+        initialRole={authModalRole}
+        initialMode={authModalMode}
+        next="/dashboard"
       />
     </div>
   );
@@ -517,7 +524,12 @@ export default function Home() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(formData),
       });
-      const result = (await response.json()) as { id?: string; error?: string };
+      const result = (await response.json()) as {
+        id?: string;
+        dhlDeliveryPriceKobo?: number | null;
+        deliveryMethod?: string;
+        error?: string;
+      };
 
       if (!response.ok || !result.id) {
         throw new Error(result.error || "Unable to save your request");
@@ -525,7 +537,11 @@ export default function Home() {
 
       sessionStorage.setItem(
         "transcript-request",
-        JSON.stringify({ ...formData, requestId: result.id }),
+        JSON.stringify({
+          ...formData,
+          requestId: result.id,
+          dhlDeliveryPriceKobo: result.dhlDeliveryPriceKobo ?? selectedDhlRate?.priceKobo ?? null,
+        }),
       );
       router.push("/payment");
     } catch (error) {
@@ -769,8 +785,14 @@ export default function Home() {
                                   onClick={() => handleTranscriptFormatChange(option.value)}
                                   className={`flex min-h-11 w-full items-center justify-between gap-3 rounded-lg px-3 py-2 text-left transition hover:bg-slate-50 ${formData.transcriptFormat === option.value ? "bg-[#edf4f8] text-[#173c5c]" : "text-slate-800"}`}
                                 >
-                                  <span className="min-w-0 text-sm font-medium">{option.label}{option.requiresDhl ? " · DHL delivery required" : ""}</span>
-                                  <span className="shrink-0 text-sm font-semibold">N{Number(option.amount).toLocaleString("en-NG")}</span>
+                                  <span className="min-w-0 text-sm font-medium">{option.label}{option.requiresDhl ? " · DHL courier delivery" : ""}</span>
+                                  <span className="shrink-0 text-sm font-semibold">
+                                    {option.requiresDhl && Number(option.amount) === 0
+                                      ? selectedDhlRate?.priceKobo
+                                        ? `N${(selectedDhlRate.priceKobo / 100).toLocaleString("en-NG")}`
+                                        : "DHL Rate"
+                                      : `N${Number(option.amount).toLocaleString("en-NG")}`}
+                                  </span>
                                 </button>
                               ))}
                             </div>
@@ -782,7 +804,22 @@ export default function Home() {
                       <p className="rounded-xl border border-slate-300 bg-white/50 p-3 text-sm text-slate-500">No transcript formats are currently available.</p>
                     )}
                     {transcriptOptionsError && <span role="alert" className="mt-2 block text-xs font-medium text-red-600">{transcriptOptionsError}. Please refresh and try again.</span>}
-                    {isHardcopyTranscript && <span className="mt-2 block text-xs font-medium text-[#173c5c]">Hardcopy transcripts require DHL. Select a destination in Delivery details below.</span>}
+                    {isHardcopyTranscript && (
+                      <div className="mt-2 flex items-center justify-between gap-3 rounded-lg border border-[#173c5c]/20 bg-[#edf4f8]/80 px-3 py-2 text-xs font-medium text-[#173c5c]">
+                        <span>
+                          {formData.dhlState && selectedDhlRate?.priceKobo
+                            ? `Hardcopy delivery to ${formData.dhlState}, ${formData.dhlCountry}: N${(selectedDhlRate.priceKobo / 100).toLocaleString("en-NG")} (fetched from database).`
+                            : "Hardcopy transcripts are linked to DHL courier delivery. Delivery rate is fetched from database based on your destination."}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => setIsDhlModalOpen(true)}
+                          className="shrink-0 font-semibold underline underline-offset-2 hover:text-[#12314a]"
+                        >
+                          {formData.dhlState ? "Change destination" : "Select destination →"}
+                        </button>
+                      </div>
+                    )}
                   </fieldset>
 
                   <Field label="Mode of admission">
@@ -977,6 +1014,29 @@ export default function Home() {
                         </span>
                       </label>
                     </div>
+                    {formData.deliveryMethod === "dhl" && (
+                      <div className="mt-3 flex flex-col gap-2 rounded-xl border border-[#173c5c]/20 bg-[#edf4f8]/60 p-3 sm:flex-row sm:items-center sm:justify-between">
+                        <div>
+                          <p className="text-xs font-semibold text-[#173c5c]">
+                            {formData.dhlState && formData.dhlCountry
+                              ? `DHL Destination: ${formData.dhlState}, ${formData.dhlCountry}`
+                              : "No DHL destination selected yet"}
+                          </p>
+                          {selectedDhlRate && selectedDhlRate.priceKobo !== null && (
+                            <p className="mt-0.5 text-xs text-slate-600">
+                              DHL courier fee: <span className="font-semibold text-slate-900">N{(selectedDhlRate.priceKobo / 100).toLocaleString("en-NG")}</span> (fetched from database)
+                            </p>
+                          )}
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setIsDhlModalOpen(true)}
+                          className="inline-flex shrink-0 items-center justify-center rounded-lg border border-[#173c5c] bg-white px-3 py-1.5 text-xs font-semibold text-[#173c5c] shadow-sm hover:bg-[#edf4f8]"
+                        >
+                          {formData.dhlState ? "Change destination" : "Select destination →"}
+                        </button>
+                      </div>
+                    )}
                   </fieldset>
 
                   <Field label="Reference number">

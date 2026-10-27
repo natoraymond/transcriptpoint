@@ -225,12 +225,18 @@ export async function POST(request: Request) {
         ${body.referenceNumber!.trim()},
         ${body.receiverEmail!.trim()}
       )
-      RETURNING id
+      RETURNING id, dhl_delivery_price_kobo AS "dhlDeliveryPriceKobo", delivery_method AS "deliveryMethod", dhl_state AS "dhlState", dhl_country AS "dhlCountry"
     `;
 
     await recordActivity(currentUser.id, "transcript_request_submitted", { requestId: String(savedRequest.id) });
 
-    return NextResponse.json({ id: savedRequest.id }, { status: 201 });
+    return NextResponse.json({
+      id: savedRequest.id,
+      dhlDeliveryPriceKobo: savedRequest.dhlDeliveryPriceKobo,
+      deliveryMethod: savedRequest.deliveryMethod,
+      dhlState: savedRequest.dhlState,
+      dhlCountry: savedRequest.dhlCountry,
+    }, { status: 201 });
   } catch (error) {
     console.error("Unable to save transcript request", error);
     return NextResponse.json(

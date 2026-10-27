@@ -11,6 +11,7 @@ type Props = {
   isOpen: boolean;
   onClose: () => void;
   initialRole?: "user" | "admin" | "super_admin";
+  initialMode?: "sign-in" | "sign-up";
   next?: string;
 };
 
@@ -18,12 +19,13 @@ export default function RoleAuthModal({
   isOpen,
   onClose,
   initialRole = "user",
+  initialMode = "sign-in",
   next,
 }: Props) {
   const router = useRouter();
   const [selectedRole, setSelectedRole] = useState<RoleType>(initialRole);
   const [isSuperAdminModalOpen, setIsSuperAdminModalOpen] = useState(false);
-  const [authMode, setAuthMode] = useState<"sign-in" | "sign-up">("sign-in");
+  const [authMode, setAuthMode] = useState<"sign-in" | "sign-up">(initialMode);
 
   // Form states
   const [fullName, setFullName] = useState("");
@@ -126,7 +128,7 @@ export default function RoleAuthModal({
   return (
     <>
       <div
-        className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/65 px-4 py-6 backdrop-blur-sm animate-in fade-in duration-200"
+        className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/70 p-4 sm:p-6 backdrop-blur-md animate-in fade-in duration-200"
         onClick={(e) => {
           if (e.target === e.currentTarget) onClose();
         }}
@@ -135,7 +137,7 @@ export default function RoleAuthModal({
         aria-labelledby="role-auth-title"
       >
         <section
-          className="relative w-full max-w-md overflow-hidden rounded-[24px] border border-white/80 bg-white p-5 shadow-2xl sm:p-6"
+          className="relative w-full max-w-md max-h-[92vh] overflow-y-auto rounded-[28px] border border-slate-200/90 bg-white p-6 shadow-2xl sm:p-7"
           onClick={(e) => e.stopPropagation()}
         >
           {/* Header Close button */}
@@ -184,10 +186,10 @@ export default function RoleAuthModal({
               >
                 <div className="flex items-center gap-1 font-bold text-xs">
                   <span>🎓</span>
-                  <span>Student / User</span>
+                  <span>User / Student / Alumni</span>
                 </div>
                 <span className="mt-0.5 text-[10px] text-slate-500 leading-tight">
-                  Request transcripts &amp; follow status.
+                  For students &amp; alumni to request &amp; track records.
                 </span>
               </button>
 

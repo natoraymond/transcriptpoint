@@ -80,7 +80,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Transcript request not found" }, { status: 404 });
     }
     const currentUser = await getCurrentUser();
-    if (!currentUser || (savedRequest.userId && currentUser.id !== String(savedRequest.userId)) || currentUser.email !== String(savedRequest.email).toLowerCase()) {
+    if (savedRequest.userId && (!currentUser || currentUser.id !== String(savedRequest.userId))) {
       return NextResponse.json({ error: "Sign in with the account used to submit this request before confirming payment" }, { status: 403 });
     }
 
@@ -132,7 +132,7 @@ export async function POST(request: Request) {
     await sql`
       UPDATE transcript_requests
         SET payment_status = 'paid', payment_reference = ${reference},
-          user_id = COALESCE(user_id, ${currentUser.id}), updated_at = NOW()
+          user_id = COALESCE(user_id, ${currentUser?.id ?? null}), updated_at = NOW()
       WHERE id = ${requestId}
     `;
 

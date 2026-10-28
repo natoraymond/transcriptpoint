@@ -94,9 +94,6 @@ export async function POST(request: Request) {
   try {
     const body = (await request.json()) as Partial<TranscriptRequest>;
     const currentUser = await getCurrentUser();
-    if (!currentUser) {
-      return NextResponse.json({ error: "Sign in or create an account before submitting a transcript request" }, { status: 401 });
-    }
     const missingField = requiredFields.find(
       (field) => typeof body[field] !== "string" || !body[field]?.trim(),
     );
@@ -200,7 +197,7 @@ export async function POST(request: Request) {
         reference_number,
         receiver_email
       ) VALUES (
-        ${currentUser.id},
+        ${currentUser?.id ?? null},
         ${body.campus!.trim()},
         ${body.transcriptFormat!.trim()},
         ${body.modeOfAdmission!.trim()},
@@ -228,7 +225,9 @@ export async function POST(request: Request) {
       RETURNING id, dhl_delivery_price_kobo AS "dhlDeliveryPriceKobo", delivery_method AS "deliveryMethod", dhl_state AS "dhlState", dhl_country AS "dhlCountry"
     `;
 
-    await recordActivity(currentUser.id, "transcript_request_submitted", { requestId: String(savedRequest.id) });
+    if (currentUser) {
+      await recordActivity(currentUser.id, "transcript_request_submitted", { requestId: String(savedRequest.id) });
+    }
 
     return NextResponse.json({
       id: savedRequest.id,

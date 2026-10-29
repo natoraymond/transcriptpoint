@@ -56,8 +56,8 @@ export async function POST(request: Request) {
   const paystackSecret = process.env.PAYSTACK_SECRET_KEY;
   const resendApiKey = process.env.RESEND_API_KEY;
   const emailFrom = process.env.EMAIL_FROM;
-  if (!paystackSecret || !resendApiKey || !emailFrom) {
-    console.error("Payment receipt email is not configured");
+  if (!paystackSecret) {
+    console.error("Paystack secret key is not configured");
     return NextResponse.json({ error: "Payment confirmation is not configured" }, { status: 503 });
   }
 
@@ -140,6 +140,11 @@ export async function POST(request: Request) {
       return NextResponse.json({ paymentConfirmed: true, emailSent: true });
     }
 
+    if (!resendApiKey || !emailFrom) {
+      console.warn("Resend email is not configured; skipping receipt email dispatch");
+      return NextResponse.json({ paymentConfirmed: true, emailSent: false });
+    }
+
     const amount = formatNaira(totalAmountNgn);
     const resend = new Resend(resendApiKey);
     const { error: emailError } = await resend.emails.send({
@@ -162,7 +167,7 @@ export async function POST(request: Request) {
 
     if (emailError) {
       console.error("Unable to send payment receipt email", emailError);
-      return NextResponse.json({ paymentConfirmed: true, emailSent: false }, { status: 502 });
+      return NextResponse.json({ paymentConfirmed: true, emailSent: false });
     }
 
     await sql`

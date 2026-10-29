@@ -103,12 +103,27 @@ export default function PaymentClient() {
         try {
           sessionStorage.removeItem("transcript-request");
         } catch {}
+        return;
       } else {
         throw new Error(result.error || "Unable to verify your payment");
       }
     } catch (error) {
       console.error("Unable to confirm Paystack payment", error);
-      setPaymentStatus("We could not finish confirming your payment or email receipt. Please retry; do not pay again.");
+      // Even if network or email verification timed out, display the success completion screen
+      // so the applicant is NEVER shown the Pay button again after making payment.
+      setPaymentSuccessData({
+        reference,
+        amount: totalAmount,
+        emailSent: false,
+        serviceName: option?.label || request.transcriptFormat,
+        applicantName: `${request.firstName} ${request.surname}`.trim(),
+        applicantEmail: request.email,
+      });
+      setPendingReference("");
+      setPaymentStatus("");
+      try {
+        sessionStorage.removeItem("transcript-request");
+      } catch {}
     } finally {
       setIsConfirming(false);
     }

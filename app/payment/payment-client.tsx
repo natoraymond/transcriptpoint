@@ -41,6 +41,21 @@ export default function PaymentClient() {
   const [isConfirming, setIsConfirming] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [optionsError, setOptionsError] = useState("");
+  const [paymentSuccessData, setPaymentSuccessData] = useState<{
+    reference: string;
+    amount: number;
+    emailSent: boolean;
+    serviceName: string;
+    applicantName: string;
+    applicantEmail: string;
+  } | null>(null);
+
+  const clearRequestAndExit = () => {
+    try {
+      sessionStorage.removeItem("transcript-request");
+    } catch {}
+    window.location.href = "/";
+  };
 
   useEffect(() => {
     let active = true;
@@ -74,9 +89,23 @@ export default function PaymentClient() {
         body: JSON.stringify({ requestId: request.requestId, reference }),
       });
       const result = await response.json() as { paymentConfirmed?: boolean; emailSent?: boolean; error?: string };
-      if (result.paymentConfirmed && result.emailSent) setPaymentStatus(`Payment successful. Your receipt was emailed to ${request.email}.`);
-      else if (result.paymentConfirmed) setPaymentStatus("Payment is confirmed, but the receipt email could not be sent yet. Please retry shortly.");
-      else throw new Error(result.error || "Unable to verify your payment");
+      if (result.paymentConfirmed) {
+        setPaymentSuccessData({
+          reference,
+          amount: totalAmount,
+          emailSent: Boolean(result.emailSent),
+          serviceName: option?.label || request.transcriptFormat,
+          applicantName: `${request.firstName} ${request.surname}`.trim(),
+          applicantEmail: request.email,
+        });
+        setPendingReference("");
+        setPaymentStatus("");
+        try {
+          sessionStorage.removeItem("transcript-request");
+        } catch {}
+      } else {
+        throw new Error(result.error || "Unable to verify your payment");
+      }
     } catch (error) {
       console.error("Unable to confirm Paystack payment", error);
       setPaymentStatus("We could not finish confirming your payment or email receipt. Please retry; do not pay again.");
@@ -109,6 +138,122 @@ export default function PaymentClient() {
       setPaymentStatus("We could not connect to Paystack. Check your internet connection and try again.");
     }
   };
+
+  if (paymentSuccessData) {
+    return (
+      <div className="min-h-screen flex flex-col bg-[#e8eaed]">
+        {/* Top University Brand Header */}
+        <header className="border-b border-slate-300 bg-white px-4 py-3 sm:px-8">
+          <div className="mx-auto flex max-w-5xl items-center gap-3">
+            <div className="flex h-12 w-12 items-center justify-center rounded border border-slate-200 bg-slate-50 text-xl font-bold text-slate-800">
+              🎓
+            </div>
+            <div>
+              <h1 className="text-lg font-bold uppercase tracking-tight text-slate-900 sm:text-xl">
+                University of Nigeria
+              </h1>
+              <p className="text-xs italic text-slate-600 sm:text-sm">
+                to restore the dignity of man
+              </p>
+            </div>
+          </div>
+        </header>
+
+        {/* Portal Sub-Nav Tabs */}
+        <div className="border-b border-slate-300 bg-slate-800 text-white">
+          <div className="mx-auto flex max-w-5xl items-center gap-1 px-4 text-xs font-semibold sm:text-sm">
+            <button
+              type="button"
+              onClick={clearRequestAndExit}
+              className="px-4 py-2.5 hover:bg-slate-700"
+            >
+              Welcome
+            </button>
+            <div className="bg-black/40 px-5 py-2.5 text-white">
+              Transcript
+            </div>
+            <button
+              type="button"
+              onClick={clearRequestAndExit}
+              className="px-4 py-2.5 hover:bg-slate-700"
+            >
+              Verification
+            </button>
+          </div>
+        </div>
+
+        {/* Main Content Area */}
+        <main className="flex-1 px-4 py-6 sm:px-8">
+          <div className="mx-auto max-w-5xl space-y-4">
+            {/* Green Notification Banner */}
+            <div className="rounded border border-emerald-300 bg-[#c7e5be] px-4 py-3 text-xs font-medium text-emerald-950 sm:text-sm">
+              Your request completed successfully.
+            </div>
+
+            {/* Transaction Details Box */}
+            <section className="rounded border border-slate-300 bg-[#d9d2e9] p-5 shadow-sm sm:p-6">
+              <div className="space-y-2 text-xs text-slate-900 sm:text-sm">
+                <p>
+                  <strong className="font-bold">Transaction Status:</strong>{" "}
+                  <span className="font-semibold text-emerald-800">TRANSACTION SUCCESSFUL</span>
+                </p>
+                <p>
+                  <strong className="font-bold">Transaction Reference:</strong>{" "}
+                  <span className="font-mono">{paymentSuccessData.reference}</span>
+                </p>
+                <p>
+                  <strong className="font-bold">Applicant Name:</strong>{" "}
+                  <span>{paymentSuccessData.applicantName}</span>
+                </p>
+                <p>
+                  <strong className="font-bold">Service:</strong>{" "}
+                  <span>{paymentSuccessData.serviceName}</span>
+                </p>
+                <p>
+                  <strong className="font-bold">Expected Amount:</strong>{" "}
+                  <span>NGN {paymentSuccessData.amount.toLocaleString("en-NG", { minimumFractionDigits: 2 })}</span>
+                </p>
+                {paymentSuccessData.emailSent && (
+                  <p className="pt-2 text-xs text-slate-700">
+                    An official payment receipt has been sent to <strong>{paymentSuccessData.applicantEmail}</strong>.
+                  </p>
+                )}
+              </div>
+            </section>
+
+            {/* Action Bar */}
+            <div className="rounded border border-emerald-900/30 bg-[#0f3c32] p-4 text-white shadow-sm sm:flex sm:items-center sm:justify-between sm:p-5">
+              <div>
+                <p className="text-sm font-semibold sm:text-base">
+                  Payment confirmed and logged to portal registry
+                </p>
+                <p className="mt-0.5 text-xs text-emerald-100">
+                  Your request is queued for processing. You may make another request or exit.
+                </p>
+              </div>
+
+              <div className="mt-4 flex flex-wrap items-center gap-2.5 sm:mt-0">
+                <button
+                  type="button"
+                  onClick={clearRequestAndExit}
+                  className="rounded bg-[#0b5345] px-4 py-2 text-xs font-semibold text-white shadow hover:bg-[#084237]"
+                >
+                  Make Another Request
+                </button>
+                <button
+                  type="button"
+                  onClick={clearRequestAndExit}
+                  className="rounded bg-[#d97706] px-4 py-2 text-xs font-semibold text-white shadow hover:bg-[#b45309]"
+                >
+                  Quit Application
+                </button>
+              </div>
+            </div>
+          </div>
+        </main>
+      </div>
+    );
+  }
 
   if (!request || !option) {
     return (

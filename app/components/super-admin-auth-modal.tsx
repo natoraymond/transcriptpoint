@@ -147,6 +147,7 @@ export default function SuperAdminAuthModal({ isOpen, onClose, triggerContext }:
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="superadmin@domain.com"
+              maxLength={254}
               className="form-input mt-1 py-2 text-xs"
               autoComplete="email"
               required
@@ -162,6 +163,7 @@ export default function SuperAdminAuthModal({ isOpen, onClose, triggerContext }:
                 onChange={(e) => setPassword(e.target.value)}
                 className="form-input pr-16"
                 placeholder="•••••••••"
+                maxLength={200}
                 required
                 autoComplete="current-password"
               />

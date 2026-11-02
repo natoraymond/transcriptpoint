@@ -306,6 +306,7 @@ export default function RoleAuthModal({
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="name@example.com"
+                maxLength={254}
                 className="form-input mt-1 py-2 text-xs"
                 required
               />

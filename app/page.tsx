@@ -937,6 +937,7 @@ export default function Home() {
                         placeholder="Enter matriculation number"
                         value={formData.matriculationNumber}
                         onChange={handleChange("matriculationNumber")}
+                        maxLength={40}
                         required
                       />
                     </Field>
@@ -957,6 +958,7 @@ export default function Home() {
                         placeholder="Your first name"
                         value={formData.firstName}
                         onChange={handleChange("firstName")}
+                        maxLength={60}
                         required
                       />
                     </Field>
@@ -968,6 +970,7 @@ export default function Home() {
                         placeholder="Your other name"
                         value={formData.otherName}
                         onChange={handleChange("otherName")}
+                        maxLength={60}
                         required
                       />
                     </Field>
@@ -979,6 +982,7 @@ export default function Home() {
                         placeholder="Your surname"
                         value={formData.surname}
                         onChange={handleChange("surname")}
+                        maxLength={60}
                         required
                       />
                     </Field>
@@ -990,6 +994,7 @@ export default function Home() {
                         placeholder="Your phone number"
                         value={formData.phoneNumber}
                         onChange={handleChange("phoneNumber")}
+                        maxLength={30}
                         required
                       />
                     </Field>
@@ -1001,6 +1006,7 @@ export default function Home() {
                         placeholder="you@example.com"
                         value={formData.email}
                         onChange={handleChange("email")}
+                        maxLength={254}
                         required
                       />
                     </Field>
@@ -1030,6 +1036,7 @@ export default function Home() {
                         placeholder="e.g. 2024"
                         value={formData.yearOfGraduation}
                         onChange={handleChange("yearOfGraduation")}
+                        maxLength={4}
                         required
                       />
                     </Field>
@@ -1054,6 +1061,7 @@ export default function Home() {
                         placeholder="Who should receive your transcript?"
                         value={formData.recipientInstitution}
                         onChange={handleChange("recipientInstitution")}
+                        maxLength={200}
                         required
                       />
                     </Field>
@@ -1065,6 +1073,7 @@ export default function Home() {
                         placeholder="Street, city, country"
                         value={formData.recipientAddress}
                         onChange={handleChange("recipientAddress")}
+                        maxLength={500}
                         required
                       />
                     </Field>
@@ -1137,6 +1146,7 @@ export default function Home() {
                         placeholder="If applicable"
                         value={formData.referenceNumber}
                         onChange={handleChange("referenceNumber")}
+                        maxLength={100}
                       />
                     </Field>
 
@@ -1147,6 +1157,7 @@ export default function Home() {
                         placeholder="recipient@example.com"
                         value={formData.receiverEmail}
                         onChange={handleChange("receiverEmail")}
+                        maxLength={254}
                         required
                       />
                     </Field>

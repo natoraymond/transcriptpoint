@@ -252,6 +252,7 @@ export default function AuthForm({ mode, next, verification, expired }: Props) {
               onChange={(event) => setEmail(event.target.value)}
               className="form-input mt-2"
               autoComplete="email"
+              maxLength={254}
               placeholder="name@example.com"
               required
             />

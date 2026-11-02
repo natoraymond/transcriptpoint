@@ -77,6 +77,7 @@ export default function ForgotPasswordPage() {
                 onChange={(event) => setEmail(event.target.value)}
                 className="form-input mt-2"
                 placeholder="name@example.com"
+                maxLength={254}
                 required
                 autoComplete="email"
               />

@@ -144,6 +144,37 @@ export async function POST(request: Request) {
       );
     }
 
+    // Maximum character limits validation
+    const fieldLimits: Record<string, { max: number; label: string }> = {
+      campus: { max: 100, label: "Campus" },
+      transcriptFormat: { max: 100, label: "Transcript format" },
+      modeOfAdmission: { max: 100, label: "Mode of admission" },
+      levelOfStudy: { max: 100, label: "Level of study" },
+      matriculationNumber: { max: 40, label: "Matriculation number" },
+      documentType: { max: 100, label: "Document type" },
+      firstName: { max: 60, label: "First name" },
+      otherName: { max: 60, label: "Other name" },
+      surname: { max: 60, label: "Surname" },
+      phoneNumber: { max: 30, label: "Phone number" },
+      email: { max: 254, label: "Email" },
+      monthOfGraduation: { max: 30, label: "Month of graduation" },
+      yearOfGraduation: { max: 4, label: "Year of graduation" },
+      recipientInstitution: { max: 200, label: "Recipient institution" },
+      recipientAddress: { max: 500, label: "Recipient address" },
+      referenceNumber: { max: 100, label: "Reference number" },
+      receiverEmail: { max: 254, label: "Receiver email" },
+    };
+
+    for (const [key, config] of Object.entries(fieldLimits)) {
+      const val = body[key as keyof TranscriptRequest];
+      if (typeof val === "string" && val.length > config.max) {
+        return NextResponse.json(
+          { error: `${config.label} cannot exceed ${config.max} characters.` },
+          { status: 400 },
+        );
+      }
+    }
+
     const matricNumber = (body.matriculationNumber || "").trim();
     const levelOfStudy = (body.levelOfStudy || "").toLowerCase();
     const isUndergrad = /^\d{4}\/\d{5,7}$/i.test(matricNumber);

@@ -918,14 +918,11 @@ export default function Home() {
                       <input
                         className={`form-input ${matricError ? "border-red-500 focus:border-red-500 focus:ring-red-500/20" : ""}`}
                         type="text"
-                        placeholder={formData.levelOfStudy === "Postgraduate" ? "e.g. PG/M.SC/19/88214 or Ph.D/..." : "e.g. 2017/245323"}
+                        placeholder="Enter matriculation number"
                         value={formData.matriculationNumber}
                         onChange={handleChange("matriculationNumber")}
                         required
                       />
-                      <p className="mt-1 text-[11px] text-slate-500">
-                        Format: <strong>2017/245323</strong> for undergraduate, or <strong>PG/M.SC/../......</strong> / <strong>Ph.D/.../....</strong> for postgraduate
-                      </p>
                     </Field>
 
                     <Field label="Document type">

@@ -6,9 +6,14 @@ import { useState, type FormEvent } from "react";
 import SuperAdminAuthModal from "./super-admin-auth-modal";
 import UniversalNavbar from "./universal-navbar";
 
-type Props = { mode: "sign-in" | "sign-up"; next?: string; verification?: string };
+type Props = {
+  mode: "sign-in" | "sign-up";
+  next?: string;
+  verification?: string;
+  expired?: boolean;
+};
 
-export default function AuthForm({ mode, next, verification }: Props) {
+export default function AuthForm({ mode, next, verification, expired }: Props) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const isSignUp = mode === "sign-up";
@@ -138,6 +143,21 @@ export default function AuthForm({ mode, next, verification }: Props) {
             ? "Create an account to access transcript processing, request tracking, and the portal."
             : "Sign in to access your role-specific dashboard and transcript operations."}
         </p>
+
+        {!isSignUp && (expired || searchParams.get("expired") === "true") && (
+          <div
+            role="status"
+            className="mt-4 flex items-center gap-3 rounded-xl border border-amber-200 bg-amber-50/80 p-3.5 text-sm text-amber-900"
+          >
+            <span className="text-lg">⏳</span>
+            <div>
+              <p className="font-semibold text-amber-900">Session expired</p>
+              <p className="text-xs text-amber-800">
+                You were logged out after a period of inactivity. Please sign in again to continue.
+              </p>
+            </div>
+          </div>
+        )}
 
         {!isSignUp && verification && (
           <p

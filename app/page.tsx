@@ -431,7 +431,7 @@ function Field({
   );
 }
 
-export function validateMatriculationNumber(value: string, levelOfStudy?: string): { isValid: boolean; errorMessage: string } {
+function validateMatriculationNumber(value: string, levelOfStudy?: string): { isValid: boolean; errorMessage: string } {
   const trimmed = value.trim();
   if (!trimmed) {
     return { isValid: false, errorMessage: "Matriculation number is required" };
@@ -505,6 +505,19 @@ export default function Home() {
   const router = useRouter();
   const pathname = usePathname();
   const [formData, setFormData] = useState(initialFormState);
+
+  // Restore unsaved draft from sessionStorage on mount
+  useEffect(() => {
+    try {
+      const savedDraft = sessionStorage.getItem("transcript-form-draft");
+      if (savedDraft) {
+        const parsed = JSON.parse(savedDraft);
+        if (parsed && typeof parsed === "object") {
+          setFormData((prev) => ({ ...prev, ...parsed }));
+        }
+      }
+    } catch {}
+  }, []);
   const [transcriptOptions, setTranscriptOptions] = useState<TranscriptOption[]>([]);
   const [selectedTranscriptCategory, setSelectedTranscriptCategory] = useState("");
   const [isTranscriptDropdownOpen, setIsTranscriptDropdownOpen] = useState(false);
@@ -555,6 +568,9 @@ export default function Home() {
         const { value } = event.target;
         setFormData((prev) => {
           const next = { ...prev, [field]: value };
+          try {
+            sessionStorage.setItem("transcript-form-draft", JSON.stringify(next));
+          } catch {}
           if (field === "matriculationNumber") {
             if (value.trim()) {
               const validation = validateMatriculationNumber(value, prev.levelOfStudy);

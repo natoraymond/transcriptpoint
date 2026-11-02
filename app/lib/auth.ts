@@ -9,6 +9,7 @@ import { getDatabase } from "./db";
 const scrypt = promisify(scryptCallback);
 export const SESSION_COOKIE = "transcriptpoint_session";
 export const SESSION_DURATION_SECONDS = 60 * 60 * 24 * 14;
+export const SESSION_INACTIVITY_TIMEOUT_SECONDS = 15 * 60; // 15 minutes of inactivity
 
 export const adminPermissions = [
   "dashboard.read",
@@ -192,6 +193,25 @@ export async function createSession(userId: string) {
     path: "/",
     expires: expiresAt,
   });
+}
+
+export async function touchCurrentSession() {
+  const token = (await cookies()).get(SESSION_COOKIE)?.value;
+  if (!token || !/^[a-f0-9]{64}$/i.test(token)) return false;
+  try {
+    const sql = getDatabase();
+    const tokenHash = digestToken(token);
+    await sql`
+      UPDATE portal_sessions
+      SET last_seen_at = NOW()
+      WHERE token_hash = ${tokenHash}
+        AND expires_at > NOW()
+    `;
+    return true;
+  } catch (error) {
+    console.error("Failed to touch portal session:", error);
+    return false;
+  }
 }
 
 export async function destroyCurrentSession() {

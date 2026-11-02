@@ -105,6 +105,32 @@ export async function POST(request: Request) {
       );
     }
 
+    const matricNumber = (body.matriculationNumber || "").trim();
+    const levelOfStudy = (body.levelOfStudy || "").toLowerCase();
+    const isUndergrad = /^\d{4}\/\d{5,7}$/i.test(matricNumber);
+    const isPostgrad = /^(PG|PH\.?D|M\.?SC|M\.?ED|M\.?ENG|MBA|LLM|MA|MPA|MLS|MPH)\/[A-Z0-9.\-_/]+$/i.test(matricNumber);
+
+    if (levelOfStudy.includes("postgraduate") && !isPostgrad) {
+      return NextResponse.json(
+        { error: 'Please enter a valid matriculation number in the format for postgraduate like ("PG/M.SC/../......" Ph.D/.../....)' },
+        { status: 400 },
+      );
+    }
+
+    if (levelOfStudy.includes("undergraduate") && !isUndergrad) {
+      return NextResponse.json(
+        { error: "Please enter a valid matriculation number in the format 2017/245323 for undergraduate." },
+        { status: 400 },
+      );
+    }
+
+    if (!isUndergrad && !isPostgrad) {
+      return NextResponse.json(
+        { error: 'Please enter a valid matriculation number in the format 2017/245323 for undergraduate, or for postgraduate like ("PG/M.SC/../......" Ph.D/.../....)' },
+        { status: 400 },
+      );
+    }
+
     const sql = getDatabase();
     const [transcriptOption] = await sql`
       SELECT value, requires_dhl AS "requiresDhl"

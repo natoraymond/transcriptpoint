@@ -413,10 +413,12 @@ function Field({
   label,
   children,
   className = "",
+  error = "",
 }: {
   label: string;
   children: ReactNode;
   className?: string;
+  error?: string;
 }) {
   return (
     <label className={`block ${className}`}>
@@ -424,8 +426,54 @@ function Field({
         {label} <span className="font-semibold text-red-500">*</span>
       </span>
       {children}
+      {error && <span className="mt-1.5 block text-xs font-medium text-red-600">{error}</span>}
     </label>
   );
+}
+
+export function validateMatriculationNumber(value: string, levelOfStudy?: string): { isValid: boolean; errorMessage: string } {
+  const trimmed = value.trim();
+  if (!trimmed) {
+    return { isValid: false, errorMessage: "Matriculation number is required" };
+  }
+
+  // Undergraduate format: 4 digits / 5 to 7 digits, e.g. 2017/245323
+  const isUndergrad = /^\d{4}\/\d{5,7}$/i.test(trimmed);
+
+  // Postgraduate format: PG/... or Ph.D/... or PhD/... or MSc/... e.g. PG/M.SC/.../..., Ph.D/.../...
+  const isPostgrad = /^(PG|PH\.?D|M\.?SC|M\.?ED|M\.?ENG|MBA|LLM|MA|MPA|MLS|MPH)\/[A-Z0-9.\-_/]+$/i.test(trimmed);
+
+  const normalizedLevel = (levelOfStudy || "").toLowerCase();
+
+  if (normalizedLevel.includes("postgraduate")) {
+    if (!isPostgrad) {
+      return {
+        isValid: false,
+        errorMessage: 'Please enter a valid matriculation number in the format for postgraduate like ("PG/M.SC/../......" Ph.D/.../....)',
+      };
+    }
+    return { isValid: true, errorMessage: "" };
+  }
+
+  if (normalizedLevel.includes("undergraduate")) {
+    if (!isUndergrad) {
+      return {
+        isValid: false,
+        errorMessage: "Please enter a valid matriculation number in the format 2017/245323 for undergraduate.",
+      };
+    }
+    return { isValid: true, errorMessage: "" };
+  }
+
+  // If level of study is not selected yet, accept either valid format or explain both
+  if (!isUndergrad && !isPostgrad) {
+    return {
+      isValid: false,
+      errorMessage: 'Please enter a valid matriculation number in the format 2017/245323 for undergraduate, or for postgraduate like ("PG/M.SC/../......" Ph.D/.../....)',
+    };
+  }
+
+  return { isValid: true, errorMessage: "" };
 }
 
 const initialFormState = {
@@ -465,6 +513,7 @@ export default function Home() {
   const [transcriptOptionsError, setTranscriptOptionsError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState("");
+  const [matricError, setMatricError] = useState("");
   const [isDhlModalOpen, setIsDhlModalOpen] = useState(false);
   const [dhlContinents, setDhlContinents] = useState<string[]>([]);
   const [dhlCountries, setDhlCountries] = useState<Array<{ countryCode: string; countryName: string; continent: string; hasRates: boolean }>>([]);
@@ -504,7 +553,21 @@ export default function Home() {
     (field: keyof typeof initialFormState) =>
     (event: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
       const { value } = event.target;
-      setFormData((prev) => ({ ...prev, [field]: value }));
+      setFormData((prev) => {
+        const next = { ...prev, [field]: value };
+        if (field === "matriculationNumber") {
+          if (value.trim()) {
+            const validation = validateMatriculationNumber(value, prev.levelOfStudy);
+            setMatricError(validation.isValid ? "" : validation.errorMessage);
+          } else {
+            setMatricError("");
+          }
+        } else if (field === "levelOfStudy" && prev.matriculationNumber.trim()) {
+          const validation = validateMatriculationNumber(prev.matriculationNumber, value);
+          setMatricError(validation.isValid ? "" : validation.errorMessage);
+        }
+        return next;
+      });
     };
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
@@ -514,6 +577,15 @@ export default function Home() {
       setIsTranscriptDropdownOpen(true);
       return;
     }
+
+    const matricValidation = validateMatriculationNumber(formData.matriculationNumber, formData.levelOfStudy);
+    if (!matricValidation.isValid) {
+      setMatricError(matricValidation.errorMessage);
+      setSubmitError(matricValidation.errorMessage);
+      return;
+    }
+
+    setMatricError("");
 
     setIsSubmitting(true);
     setSubmitError("");
@@ -839,15 +911,18 @@ export default function Home() {
                     </select>
                   </Field>
 
-                  <Field label="Matriculation number">
+                  <Field label="Matriculation number" error={matricError}>
                     <input
-                      className="form-input"
+                      className={`form-input ${matricError ? "border-red-500 focus:border-red-500 focus:ring-red-500/20" : ""}`}
                       type="text"
-                      placeholder="Enter matriculation number"
+                      placeholder={formData.levelOfStudy === "Postgraduate" ? "e.g. PG/M.SC/19/88214 or Ph.D/..." : "e.g. 2017/245323"}
                       value={formData.matriculationNumber}
                       onChange={handleChange("matriculationNumber")}
                       required
                     />
+                    <p className="mt-1 text-[11px] text-slate-500">
+                      Format: <strong>2017/245323</strong> for undergraduate, or <strong>PG/M.SC/../......</strong> / <strong>Ph.D/.../....</strong> for postgraduate
+                    </p>
                   </Field>
 
                   <Field label="Document type">

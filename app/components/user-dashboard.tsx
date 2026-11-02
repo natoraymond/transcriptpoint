@@ -235,6 +235,7 @@ export default function UserDashboard({ initialUser }: { initialUser: User }) {
                       <th className="px-5 py-3">Status</th>
                       <th className="px-5 py-3">Payment</th>
                       <th className="px-5 py-3">Date</th>
+                      <th className="px-5 py-3 text-right">Action</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
@@ -251,18 +252,34 @@ export default function UserDashboard({ initialUser }: { initialUser: User }) {
                           </span>
                         </td>
                         <td className="px-5 py-4 capitalize">
-                          <span className="rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-semibold text-emerald-800">
+                          <span className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${
+                            request.paymentStatus === "paid"
+                              ? "bg-emerald-50 text-emerald-800"
+                              : "bg-amber-50 text-amber-800"
+                          }`}>
                             {request.paymentStatus}
                           </span>
                         </td>
                         <td className="whitespace-nowrap px-5 py-4 text-xs text-slate-500">
                           {new Date(request.createdAt).toLocaleDateString()}
                         </td>
+                        <td className="whitespace-nowrap px-5 py-4 text-right text-xs">
+                          {request.paymentStatus !== "paid" ? (
+                            <a
+                              href={`/payment?requestId=${encodeURIComponent(request.id)}`}
+                              className="inline-flex items-center rounded-lg bg-[#173c5c] px-3 py-1.5 font-semibold text-white shadow-sm hover:bg-[#12314a]"
+                            >
+                              Pay / Retry
+                            </a>
+                          ) : (
+                            <span className="font-medium text-emerald-700">Completed</span>
+                          )}
+                        </td>
                       </tr>
                     ))}
                     {dashboard && !dashboard.requests.length && (
                       <tr>
-                        <td colSpan={5} className="px-5 py-10 text-center text-slate-500">
+                        <td colSpan={6} className="px-5 py-10 text-center text-slate-500">
                           No requests are linked to this account yet. Click &quot;New Request&quot; to begin.
                         </td>
                       </tr>

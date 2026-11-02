@@ -44,7 +44,46 @@ const continents = [
 export async function GET(request: Request) {
   try {
     const sql = getDatabase();
-    const countryCode = new URL(request.url).searchParams.get("countryCode")?.toUpperCase();
+    const searchParams = new URL(request.url).searchParams;
+    const requestId = searchParams.get("requestId");
+
+    if (requestId) {
+      if (!/^\d+$/.test(requestId)) {
+        return NextResponse.json({ error: "Invalid request ID" }, { status: 400 });
+      }
+
+      const [foundRequest] = await sql`
+        SELECT id::text AS id, campus, transcript_format AS "transcriptFormat",
+          mode_of_admission AS "modeOfAdmission", level_of_study AS "levelOfStudy",
+          matriculation_number AS "matriculationNumber", document_type AS "documentType",
+          first_name AS "firstName", other_name AS "otherName", surname,
+          phone_number AS "phoneNumber", email, month_of_graduation AS "monthOfGraduation",
+          year_of_graduation AS "yearOfGraduation", recipient_institution AS "recipientInstitution",
+          recipient_address AS "recipientAddress", delivery_method AS "deliveryMethod",
+          dhl_continent AS "dhlContinent", dhl_country AS "dhlCountry",
+          dhl_country_code AS "dhlCountryCode", dhl_state AS "dhlState",
+          dhl_delivery_price_kobo AS "dhlDeliveryPriceKobo", reference_number AS "referenceNumber",
+          receiver_email AS "receiverEmail", status, payment_status AS "paymentStatus",
+          payment_reference AS "paymentReference", created_at AS "createdAt", user_id AS "userId"
+        FROM transcript_requests
+        WHERE id = ${requestId}
+        LIMIT 1
+      `;
+
+      if (!foundRequest) {
+        return NextResponse.json({ error: "Transcript request not found" }, { status: 404 });
+      }
+
+      const currentUser = await getCurrentUser();
+      // Allow if unassigned or matches current user
+      if (foundRequest.userId && (!currentUser || currentUser.id !== String(foundRequest.userId))) {
+        return NextResponse.json({ error: "Unauthorized access to this transcript request" }, { status: 403 });
+      }
+
+      return NextResponse.json({ request: foundRequest });
+    }
+
+    const countryCode = searchParams.get("countryCode")?.toUpperCase();
 
     if (countryCode) {
       const rates = await sql`

@@ -274,7 +274,7 @@ function LandingPage({ onGetStarted }: { onGetStarted: () => void }) {
               <div className="flex items-center justify-between border-b border-[#edf0e9] pb-4 sm:pb-5">
                 <div className="flex items-center gap-3">
                   <span className="flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-xl sm:rounded-2xl bg-[#edf2e8] text-[#4d6841]">
-                    <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5" aria-hidden="true"><path d="M6 3.75h8l4 4v12.5H6a2 2 0 0 1-2-2v-12.5a2 2 0 0 1 2-2Z" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round"/><path d="M14 4v4h4M8 12h8M8 15.5h5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"/></svg>
+                    <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5" aria-hidden="true"><path d="M6 3.75h8l4 4v12.5H6a2 2 0 0 1-2-2v-12.5a2 2 0 0 1 2-2Z" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" /><path d="M14 4v4h4M8 12h8M8 15.5h5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" /></svg>
                   </span>
                   <div><p className="text-xs sm:text-sm font-semibold text-[#253b34]">Your transcript request</p><p className="mt-0.5 text-[11px] sm:text-xs text-[#87928c]">A straightforward process, all in one place</p></div>
                 </div>
@@ -532,8 +532,8 @@ export default function Home() {
           setTranscriptOptions(activeOptions);
           setSelectedTranscriptCategory(
             activeOptions.find((option) => option.category.toLowerCase().includes("softcopy"))?.category ??
-              activeOptions[0]?.category ??
-              "",
+            activeOptions[0]?.category ??
+            "",
           );
         }
       })
@@ -551,24 +551,24 @@ export default function Home() {
 
   const handleChange =
     (field: keyof typeof initialFormState) =>
-    (event: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-      const { value } = event.target;
-      setFormData((prev) => {
-        const next = { ...prev, [field]: value };
-        if (field === "matriculationNumber") {
-          if (value.trim()) {
-            const validation = validateMatriculationNumber(value, prev.levelOfStudy);
+      (event: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+        const { value } = event.target;
+        setFormData((prev) => {
+          const next = { ...prev, [field]: value };
+          if (field === "matriculationNumber") {
+            if (value.trim()) {
+              const validation = validateMatriculationNumber(value, prev.levelOfStudy);
+              setMatricError(validation.isValid ? "" : validation.errorMessage);
+            } else {
+              setMatricError("");
+            }
+          } else if (field === "levelOfStudy" && prev.matriculationNumber.trim()) {
+            const validation = validateMatriculationNumber(prev.matriculationNumber, value);
             setMatricError(validation.isValid ? "" : validation.errorMessage);
-          } else {
-            setMatricError("");
           }
-        } else if (field === "levelOfStudy" && prev.matriculationNumber.trim()) {
-          const validation = validateMatriculationNumber(prev.matriculationNumber, value);
-          setMatricError(validation.isValid ? "" : validation.errorMessage);
-        }
-        return next;
-      });
-    };
+          return next;
+        });
+      };
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -607,15 +607,18 @@ export default function Home() {
         throw new Error(result.error || "Unable to save your request");
       }
 
-      sessionStorage.setItem(
-        "transcript-request",
-        JSON.stringify({
-          ...formData,
-          requestId: result.id,
-          dhlDeliveryPriceKobo: result.dhlDeliveryPriceKobo ?? selectedDhlRate?.priceKobo ?? null,
-        }),
-      );
-      router.push("/payment");
+      try {
+        sessionStorage.setItem("last-transcript-request-id", result.id);
+        sessionStorage.setItem(
+          "transcript-request",
+          JSON.stringify({
+            ...formData,
+            requestId: result.id,
+            dhlDeliveryPriceKobo: result.dhlDeliveryPriceKobo ?? selectedDhlRate?.priceKobo ?? null,
+          }),
+        );
+      } catch {}
+      router.push(`/payment?requestId=${encodeURIComponent(result.id)}`);
     } catch (error) {
       setSubmitError(error instanceof Error ? error.message : "Unable to save your request");
       setIsSubmitting(false);
@@ -725,436 +728,436 @@ export default function Home() {
       <div className="px-4 py-6 sm:px-6 lg:px-10">
         <div className="mx-auto max-w-5xl rounded-[28px] border border-white/60 bg-white/70 shadow-[0_20px_60px_rgba(15,23,42,0.08)] backdrop-blur-sm">
           <main className="px-4 pb-6 pt-6 sm:px-8 sm:pb-8">
-          <div className="rounded-[22px] border border-white/40 bg-[#e8ebeb]/35 px-4 py-5 shadow-inner shadow-white/30 sm:px-6 sm:py-6">
-            <div className="mb-6">
-              <h1 className="text-2xl font-semibold tracking-tight text-slate-900 sm:text-[2rem]">
-                Transcript request form
-              </h1>
-              <p className="mt-2 text-xs text-slate-500 sm:text-sm">
-                Fields marked <span className="font-semibold text-red-500">*</span> are required
-              </p>
-            </div>
+            <div className="rounded-[22px] border border-white/40 bg-[#e8ebeb]/35 px-4 py-5 shadow-inner shadow-white/30 sm:px-6 sm:py-6">
+              <div className="mb-6">
+                <h1 className="text-2xl font-semibold tracking-tight text-slate-900 sm:text-[2rem]">
+                  Transcript request form
+                </h1>
+                <p className="mt-2 text-xs text-slate-500 sm:text-sm">
+                  Fields marked <span className="font-semibold text-red-500">*</span> are required
+                </p>
+              </div>
 
-            <form className="space-y-6" onSubmit={handleSubmit}>
-              <section className="rounded-xl border border-white/60 bg-[#f1f3f3]/40 p-4 sm:p-5">
-                <div className="mb-4 flex items-center gap-3">
-                  <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-slate-900 text-[10px] font-semibold text-white">
-                    01
-                  </span>
-                  <h2 className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-500">
-                    Student details
-                  </h2>
-                </div>
+              <form className="space-y-6" onSubmit={handleSubmit}>
+                <section className="rounded-xl border border-white/60 bg-[#f1f3f3]/40 p-4 sm:p-5">
+                  <div className="mb-4 flex items-center gap-3">
+                    <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-slate-900 text-[10px] font-semibold text-white">
+                      01
+                    </span>
+                    <h2 className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-500">
+                      Student details
+                    </h2>
+                  </div>
 
-                <div className="grid gap-4 md:grid-cols-2">
-                  <Field label="Campus">
-                    <select className="form-input" value={formData.campus} onChange={handleChange("campus")} required>
-                      <option value="">Select campus</option>
-                      <option>NWAFOR-ORIZU COLLEGE OF EDUCATION, NSUGBE, ANAMBRA STATE</option>
-                      <option>ALVAN IKOKU COLLEGE OF EDUCATION</option>
-                      <option>YARATECH</option>
-                      <option>SANOWICH OWERRI</option>
-                      <option>DISTANCE LEARNING (LAGOS)</option>
-                      <option>WERE EKIITI (REGULAR)</option>
-                      <option>IKERE EKITI (SANDWICH)</option>
-                      <option>SPIRITAN SCHOOL OF PHILOSOPHY ISHENU</option>
-                      <option>ONDO</option>
-                      <option>UNN DIPLOMA</option>
-                      <option>DIPLOMA IN ARCHEOLOGY</option>
-                      <option>DIPLOMA IN LINGUISTICS</option>
-                      <option>UNN SANDWICH</option>
-                      <option>DIPLOMA IN AGRIC TURE</option>
-                      <option>DIPLOMA IN EDUCATION</option>
-                      <option>DIPLOMA IN PHYSICAL SCIENCE</option>
-                      <option>NSUKKA CAMPUS</option>
-                      <option>ENUGU CAMPUS</option>
-                    </select>
-                  </Field>
+                  <div className="grid gap-4 md:grid-cols-2">
+                    <Field label="Campus">
+                      <select className="form-input" value={formData.campus} onChange={handleChange("campus")} required>
+                        <option value="">Select campus</option>
+                        <option>NWAFOR-ORIZU COLLEGE OF EDUCATION, NSUGBE, ANAMBRA STATE</option>
+                        <option>ALVAN IKOKU COLLEGE OF EDUCATION</option>
+                        <option>YARATECH</option>
+                        <option>SANOWICH OWERRI</option>
+                        <option>DISTANCE LEARNING (LAGOS)</option>
+                        <option>WERE EKIITI (REGULAR)</option>
+                        <option>IKERE EKITI (SANDWICH)</option>
+                        <option>SPIRITAN SCHOOL OF PHILOSOPHY ISHENU</option>
+                        <option>ONDO</option>
+                        <option>UNN DIPLOMA</option>
+                        <option>DIPLOMA IN ARCHEOLOGY</option>
+                        <option>DIPLOMA IN LINGUISTICS</option>
+                        <option>UNN SANDWICH</option>
+                        <option>DIPLOMA IN AGRIC TURE</option>
+                        <option>DIPLOMA IN EDUCATION</option>
+                        <option>DIPLOMA IN PHYSICAL SCIENCE</option>
+                        <option>NSUKKA CAMPUS</option>
+                        <option>ENUGU CAMPUS</option>
+                      </select>
+                    </Field>
 
-                  <fieldset className="min-w-0">
-                    <legend className="mb-2 block text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">
-                      Transcript format <span className="font-semibold text-red-500">*</span>
-                    </legend>
-                    {isLoadingTranscriptOptions ? (
-                      <p className="rounded-xl border border-slate-300 bg-white/50 p-3 text-sm text-slate-500">Loading transcript formats...</p>
-                    ) : transcriptOptions.length > 0 ? (
-                      <>
-                        <div className="grid gap-2 sm:grid-cols-2">
-                          {transcriptCategories.map((category) => {
-                            const isSelected = visibleTranscriptCategory === category;
-                            const formatCount = transcriptOptions.filter((option) => option.category === category).length;
-                            return (
-                              <button
-                                key={category}
-                                type="button"
-                                aria-pressed={isSelected}
-                                onClick={() => {
-                                  setSelectedTranscriptCategory(category);
-                                  if (selectedTranscriptOption?.category !== category) {
-                                    handleTranscriptFormatChange("");
-                                  }
-                                  setIsTranscriptDropdownOpen(true);
-                                }}
-                                className={`flex min-h-14 items-center justify-between gap-3 rounded-xl border px-4 py-3 text-left transition ${isSelected ? "border-[#173c5c] bg-[#edf4f8] text-[#173c5c] shadow-sm" : "border-slate-300 bg-white/50 text-slate-700 hover:border-slate-400 hover:bg-white"}`}
-                              >
-                                <span className="text-sm font-semibold">{category}</span>
-                                <span className="flex shrink-0 items-center gap-2 text-[10px] font-medium text-slate-500">
-                                  {formatCount} {formatCount === 1 ? "option" : "options"}
-                                  <svg
-                                    viewBox="0 0 20 20"
-                                    fill="none"
-                                    aria-hidden="true"
-                                    className={`h-4 w-4 transition-transform ${isSelected ? "rotate-180" : ""}`}
-                                  >
-                                    <path d="m5 7.5 5 5 5-5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-                                  </svg>
-                                </span>
-                              </button>
-                            );
-                          })}
-                        </div>
-                        <label className="mt-3 block text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">
-                          Choose a {visibleTranscriptCategory.toLowerCase()} option
-                        </label>
-                        <div className="relative mt-2" onKeyDown={(event) => {
-                          if (event.key === "Escape") setIsTranscriptDropdownOpen(false);
-                        }}>
-                          <button
-                            type="button"
-                            aria-haspopup="listbox"
-                            aria-expanded={isTranscriptDropdownOpen}
-                            aria-controls="transcript-format-options"
-                            aria-label={`Transcript format: ${selectedTranscriptOption?.label ?? "Select transcript format"}`}
-                            aria-describedby={transcriptFormatError ? "transcript-format-error" : undefined}
-                            onClick={() => setIsTranscriptDropdownOpen((isOpen) => !isOpen)}
-                            className={`form-input flex min-h-12 items-center justify-between gap-3 text-left ${transcriptFormatError ? "border-red-500" : ""}`}
-                          >
-                            <span className={selectedTranscriptOption ? "text-slate-900" : "text-slate-500"}>
-                              {selectedTranscriptOption?.label ?? "Select transcript format"}
-                            </span>
-                            <svg
-                              viewBox="0 0 20 20"
-                              fill="none"
-                              aria-hidden="true"
-                              className={`h-5 w-5 shrink-0 text-slate-500 transition-transform ${isTranscriptDropdownOpen ? "rotate-180" : ""}`}
-                            >
-                              <path d="m5 7.5 5 5 5-5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-                            </svg>
-                          </button>
-                          {isTranscriptDropdownOpen && (
-                            <div
-                              id="transcript-format-options"
-                              role="listbox"
-                              aria-label={`${visibleTranscriptCategory} transcript formats`}
-                              className="absolute left-0 right-0 z-30 mt-1 max-h-64 overflow-y-auto rounded-xl border border-slate-200 bg-white p-1.5 shadow-xl"
-                            >
-                              {visibleTranscriptOptions.map((option) => (
+                    <fieldset className="min-w-0">
+                      <legend className="mb-2 block text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">
+                        Transcript format <span className="font-semibold text-red-500">*</span>
+                      </legend>
+                      {isLoadingTranscriptOptions ? (
+                        <p className="rounded-xl border border-slate-300 bg-white/50 p-3 text-sm text-slate-500">Loading transcript formats...</p>
+                      ) : transcriptOptions.length > 0 ? (
+                        <>
+                          <div className="grid gap-2 sm:grid-cols-2">
+                            {transcriptCategories.map((category) => {
+                              const isSelected = visibleTranscriptCategory === category;
+                              const formatCount = transcriptOptions.filter((option) => option.category === category).length;
+                              return (
                                 <button
-                                  key={option.value}
+                                  key={category}
                                   type="button"
-                                  role="option"
-                                  aria-selected={formData.transcriptFormat === option.value}
-                                  onClick={() => handleTranscriptFormatChange(option.value)}
-                                  className={`flex min-h-11 w-full items-center justify-between gap-3 rounded-lg px-3 py-2 text-left transition hover:bg-slate-50 ${formData.transcriptFormat === option.value ? "bg-[#edf4f8] text-[#173c5c]" : "text-slate-800"}`}
+                                  aria-pressed={isSelected}
+                                  onClick={() => {
+                                    setSelectedTranscriptCategory(category);
+                                    if (selectedTranscriptOption?.category !== category) {
+                                      handleTranscriptFormatChange("");
+                                    }
+                                    setIsTranscriptDropdownOpen(true);
+                                  }}
+                                  className={`flex min-h-14 items-center justify-between gap-3 rounded-xl border px-4 py-3 text-left transition ${isSelected ? "border-[#173c5c] bg-[#edf4f8] text-[#173c5c] shadow-sm" : "border-slate-300 bg-white/50 text-slate-700 hover:border-slate-400 hover:bg-white"}`}
                                 >
-                                  <span className="min-w-0 text-sm font-medium">{option.label}{option.requiresDhl ? " · DHL courier delivery" : ""}</span>
-                                  <span className="shrink-0 text-sm font-semibold">
-                                    {option.requiresDhl && Number(option.amount) === 0
-                                      ? selectedDhlRate?.priceKobo
-                                        ? `N${(selectedDhlRate.priceKobo / 100).toLocaleString("en-NG")}`
-                                        : "DHL Rate"
-                                      : `N${Number(option.amount).toLocaleString("en-NG")}`}
+                                  <span className="text-sm font-semibold">{category}</span>
+                                  <span className="flex shrink-0 items-center gap-2 text-[10px] font-medium text-slate-500">
+                                    {formatCount} {formatCount === 1 ? "option" : "options"}
+                                    <svg
+                                      viewBox="0 0 20 20"
+                                      fill="none"
+                                      aria-hidden="true"
+                                      className={`h-4 w-4 transition-transform ${isSelected ? "rotate-180" : ""}`}
+                                    >
+                                      <path d="m5 7.5 5 5 5-5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                                    </svg>
                                   </span>
                                 </button>
-                              ))}
-                            </div>
-                          )}
+                              );
+                            })}
+                          </div>
+                          <label className="mt-3 block text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">
+                            Choose a {visibleTranscriptCategory.toLowerCase()} option
+                          </label>
+                          <div className="relative mt-2" onKeyDown={(event) => {
+                            if (event.key === "Escape") setIsTranscriptDropdownOpen(false);
+                          }}>
+                            <button
+                              type="button"
+                              aria-haspopup="listbox"
+                              aria-expanded={isTranscriptDropdownOpen}
+                              aria-controls="transcript-format-options"
+                              aria-label={`Transcript format: ${selectedTranscriptOption?.label ?? "Select transcript format"}`}
+                              aria-describedby={transcriptFormatError ? "transcript-format-error" : undefined}
+                              onClick={() => setIsTranscriptDropdownOpen((isOpen) => !isOpen)}
+                              className={`form-input flex min-h-12 items-center justify-between gap-3 text-left ${transcriptFormatError ? "border-red-500" : ""}`}
+                            >
+                              <span className={selectedTranscriptOption ? "text-slate-900" : "text-slate-500"}>
+                                {selectedTranscriptOption?.label ?? "Select transcript format"}
+                              </span>
+                              <svg
+                                viewBox="0 0 20 20"
+                                fill="none"
+                                aria-hidden="true"
+                                className={`h-5 w-5 shrink-0 text-slate-500 transition-transform ${isTranscriptDropdownOpen ? "rotate-180" : ""}`}
+                              >
+                                <path d="m5 7.5 5 5 5-5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                              </svg>
+                            </button>
+                            {isTranscriptDropdownOpen && (
+                              <div
+                                id="transcript-format-options"
+                                role="listbox"
+                                aria-label={`${visibleTranscriptCategory} transcript formats`}
+                                className="absolute left-0 right-0 z-30 mt-1 max-h-64 overflow-y-auto rounded-xl border border-slate-200 bg-white p-1.5 shadow-xl"
+                              >
+                                {visibleTranscriptOptions.map((option) => (
+                                  <button
+                                    key={option.value}
+                                    type="button"
+                                    role="option"
+                                    aria-selected={formData.transcriptFormat === option.value}
+                                    onClick={() => handleTranscriptFormatChange(option.value)}
+                                    className={`flex min-h-11 w-full items-center justify-between gap-3 rounded-lg px-3 py-2 text-left transition hover:bg-slate-50 ${formData.transcriptFormat === option.value ? "bg-[#edf4f8] text-[#173c5c]" : "text-slate-800"}`}
+                                  >
+                                    <span className="min-w-0 text-sm font-medium">{option.label}{option.requiresDhl ? " · DHL courier delivery" : ""}</span>
+                                    <span className="shrink-0 text-sm font-semibold">
+                                      {option.requiresDhl && Number(option.amount) === 0
+                                        ? selectedDhlRate?.priceKobo
+                                          ? `N${(selectedDhlRate.priceKobo / 100).toLocaleString("en-NG")}`
+                                          : "DHL Rate"
+                                        : `N${Number(option.amount).toLocaleString("en-NG")}`}
+                                    </span>
+                                  </button>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                          {transcriptFormatError && <span id="transcript-format-error" role="alert" className="mt-2 block text-xs font-medium text-red-600">Select a transcript format to continue.</span>}
+                        </>
+                      ) : (
+                        <p className="rounded-xl border border-slate-300 bg-white/50 p-3 text-sm text-slate-500">No transcript formats are currently available.</p>
+                      )}
+                      {transcriptOptionsError && <span role="alert" className="mt-2 block text-xs font-medium text-red-600">{transcriptOptionsError}. Please refresh and try again.</span>}
+                      {isHardcopyTranscript && (
+                        <div className="mt-2 flex items-center justify-between gap-3 rounded-lg border border-[#173c5c]/20 bg-[#edf4f8]/80 px-3 py-2 text-xs font-medium text-[#173c5c]">
+                          <span>
+                            {formData.dhlState && selectedDhlRate?.priceKobo
+                              ? `Hardcopy delivery to ${formData.dhlState}, ${formData.dhlCountry}: N${(selectedDhlRate.priceKobo / 100).toLocaleString("en-NG")} (fetched from database).`
+                              : "Hardcopy transcripts are linked to DHL courier delivery. Delivery rate is fetched from database based on your destination."}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => setIsDhlModalOpen(true)}
+                            className="shrink-0 font-semibold underline underline-offset-2 hover:text-[#12314a]"
+                          >
+                            {formData.dhlState ? "Change destination" : "Select destination →"}
+                          </button>
                         </div>
-                        {transcriptFormatError && <span id="transcript-format-error" role="alert" className="mt-2 block text-xs font-medium text-red-600">Select a transcript format to continue.</span>}
-                      </>
-                    ) : (
-                      <p className="rounded-xl border border-slate-300 bg-white/50 p-3 text-sm text-slate-500">No transcript formats are currently available.</p>
-                    )}
-                    {transcriptOptionsError && <span role="alert" className="mt-2 block text-xs font-medium text-red-600">{transcriptOptionsError}. Please refresh and try again.</span>}
-                    {isHardcopyTranscript && (
-                      <div className="mt-2 flex items-center justify-between gap-3 rounded-lg border border-[#173c5c]/20 bg-[#edf4f8]/80 px-3 py-2 text-xs font-medium text-[#173c5c]">
-                        <span>
-                          {formData.dhlState && selectedDhlRate?.priceKobo
-                            ? `Hardcopy delivery to ${formData.dhlState}, ${formData.dhlCountry}: N${(selectedDhlRate.priceKobo / 100).toLocaleString("en-NG")} (fetched from database).`
-                            : "Hardcopy transcripts are linked to DHL courier delivery. Delivery rate is fetched from database based on your destination."}
-                        </span>
-                        <button
-                          type="button"
-                          onClick={() => setIsDhlModalOpen(true)}
-                          className="shrink-0 font-semibold underline underline-offset-2 hover:text-[#12314a]"
-                        >
-                          {formData.dhlState ? "Change destination" : "Select destination →"}
-                        </button>
+                      )}
+                    </fieldset>
+
+                    <Field label="Mode of admission">
+                      <select className="form-input" value={formData.modeOfAdmission} onChange={handleChange("modeOfAdmission")} required>
+                        <option value="">Select your admission category</option>
+                        <option>UTME</option>
+                        <option>SANDWICH</option>
+                        <option>DIRECT ENTRY</option>
+                      </select>
+                    </Field>
+
+                    <Field label="Level of study">
+                      <select className="form-input" value={formData.levelOfStudy} onChange={handleChange("levelOfStudy")} required>
+                        <option value="">Select level</option>
+                        <option>Undergraduate</option>
+                        <option>Postgraduate</option>
+                      </select>
+                    </Field>
+
+                    <Field label="Matriculation number" error={matricError}>
+                      <input
+                        className={`form-input ${matricError ? "border-red-500 focus:border-red-500 focus:ring-red-500/20" : ""}`}
+                        type="text"
+                        placeholder={formData.levelOfStudy === "Postgraduate" ? "e.g. PG/M.SC/19/88214 or Ph.D/..." : "e.g. 2017/245323"}
+                        value={formData.matriculationNumber}
+                        onChange={handleChange("matriculationNumber")}
+                        required
+                      />
+                      <p className="mt-1 text-[11px] text-slate-500">
+                        Format: <strong>2017/245323</strong> for undergraduate, or <strong>PG/M.SC/../......</strong> / <strong>Ph.D/.../....</strong> for postgraduate
+                      </p>
+                    </Field>
+
+                    <Field label="Document type">
+                      <select className="form-input" value={formData.documentType} onChange={handleChange("documentType")} required>
+                        <option value="">Select document type</option>
+                        <option>Transcript</option>
+                        <option>Certificate</option>
+                        <option>Academic record</option>
+                      </select>
+                    </Field>
+
+                    <Field label="First name">
+                      <input
+                        className="form-input"
+                        type="text"
+                        placeholder="Your first name"
+                        value={formData.firstName}
+                        onChange={handleChange("firstName")}
+                        required
+                      />
+                    </Field>
+
+                    <Field label="Other name">
+                      <input
+                        className="form-input"
+                        type="text"
+                        placeholder="Your other name"
+                        value={formData.otherName}
+                        onChange={handleChange("otherName")}
+                        required
+                      />
+                    </Field>
+
+                    <Field label="Surname">
+                      <input
+                        className="form-input"
+                        type="text"
+                        placeholder="Your surname"
+                        value={formData.surname}
+                        onChange={handleChange("surname")}
+                        required
+                      />
+                    </Field>
+
+                    <Field label="Phone number">
+                      <input
+                        className="form-input"
+                        type="tel"
+                        placeholder="Your phone number"
+                        value={formData.phoneNumber}
+                        onChange={handleChange("phoneNumber")}
+                        required
+                      />
+                    </Field>
+
+                    <Field label="E-mail">
+                      <input
+                        className="form-input"
+                        type="email"
+                        placeholder="you@example.com"
+                        value={formData.email}
+                        onChange={handleChange("email")}
+                        required
+                      />
+                    </Field>
+
+                    <Field label="Month of graduation">
+                      <select className="form-input" value={formData.monthOfGraduation} onChange={handleChange("monthOfGraduation")} required>
+                        <option value="">Select month</option>
+                        <option>January</option>
+                        <option>February</option>
+                        <option>March</option>
+                        <option>April</option>
+                        <option>May</option>
+                        <option>June</option>
+                        <option>July</option>
+                        <option>August</option>
+                        <option>September</option>
+                        <option>October</option>
+                        <option>November</option>
+                        <option>December</option>
+                      </select>
+                    </Field>
+
+                    <Field label="Year of graduation">
+                      <input
+                        className="form-input"
+                        type="text"
+                        placeholder="e.g. 2024"
+                        value={formData.yearOfGraduation}
+                        onChange={handleChange("yearOfGraduation")}
+                        required
+                      />
+                    </Field>
+                  </div>
+                </section>
+
+                <section className="rounded-xl border border-white/60 bg-[#f1f3f3]/40 p-4 sm:p-5">
+                  <div className="mb-4 flex items-center gap-3">
+                    <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-slate-900 text-[10px] font-semibold text-white">
+                      02
+                    </span>
+                    <h2 className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-500">
+                      Delivery details
+                    </h2>
+                  </div>
+
+                  <div className="grid gap-4 md:grid-cols-2">
+                    <Field label="Recipient institution / organization" className="md:col-span-2">
+                      <input
+                        className="form-input"
+                        type="text"
+                        placeholder="Who should receive your transcript?"
+                        value={formData.recipientInstitution}
+                        onChange={handleChange("recipientInstitution")}
+                        required
+                      />
+                    </Field>
+
+                    <Field label="Recipient address" className="md:col-span-2">
+                      <input
+                        className="form-input"
+                        type="text"
+                        placeholder="Street, city, country"
+                        value={formData.recipientAddress}
+                        onChange={handleChange("recipientAddress")}
+                        required
+                      />
+                    </Field>
+
+                    <fieldset className="md:col-span-2">
+                      <legend className="mb-2 block text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">
+                        Delivery method <span className="font-semibold text-red-500">*</span>
+                      </legend>
+                      <div className="grid gap-3 sm:grid-cols-2">
+                        <label className="flex cursor-pointer items-center gap-3 rounded-xl border border-slate-300 bg-white/50 p-3 transition has-[:checked]:border-[#173c5c] has-[:checked]:bg-white">
+                          <input
+                            className="h-4 w-4 accent-[#173c5c]"
+                            type="radio"
+                            name="deliveryMethod"
+                            value="email"
+                            checked={formData.deliveryMethod === "email"}
+                            onChange={() => selectDeliveryMethod("email")}
+                            disabled={isHardcopyTranscript}
+                            required
+                          />
+                          <span>
+                            <span className="block text-sm font-semibold text-slate-900">Email delivery</span>
+                            <span className="block text-xs text-slate-500">Receive the transcript electronically</span>
+                          </span>
+                        </label>
+                        <label className="flex cursor-pointer items-center gap-3 rounded-xl border border-slate-300 bg-white/50 p-3 transition has-[:checked]:border-[#173c5c] has-[:checked]:bg-white">
+                          <input
+                            className="h-4 w-4 accent-[#173c5c]"
+                            type="radio"
+                            name="deliveryMethod"
+                            value="dhl"
+                            checked={formData.deliveryMethod === "dhl"}
+                            onChange={() => selectDeliveryMethod("dhl")}
+                          />
+                          <span>
+                            <span className="block text-sm font-semibold text-slate-900">DHL delivery</span>
+                            <span className="block text-xs text-slate-500">Send a physical copy by courier</span>
+                          </span>
+                        </label>
                       </div>
-                    )}
-                  </fieldset>
-
-                  <Field label="Mode of admission">
-                    <select className="form-input" value={formData.modeOfAdmission} onChange={handleChange("modeOfAdmission")} required>
-                      <option value="">Select your admission category</option>
-                      <option>UTME</option>
-                      <option>SANDWICH</option>
-                      <option>DIRECT ENTRY</option>
-                    </select>
-                  </Field>
-
-                  <Field label="Level of study">
-                    <select className="form-input" value={formData.levelOfStudy} onChange={handleChange("levelOfStudy")} required>
-                      <option value="">Select level</option>
-                      <option>Undergraduate</option>
-                      <option>Postgraduate</option>
-                    </select>
-                  </Field>
-
-                  <Field label="Matriculation number" error={matricError}>
-                    <input
-                      className={`form-input ${matricError ? "border-red-500 focus:border-red-500 focus:ring-red-500/20" : ""}`}
-                      type="text"
-                      placeholder={formData.levelOfStudy === "Postgraduate" ? "e.g. PG/M.SC/19/88214 or Ph.D/..." : "e.g. 2017/245323"}
-                      value={formData.matriculationNumber}
-                      onChange={handleChange("matriculationNumber")}
-                      required
-                    />
-                    <p className="mt-1 text-[11px] text-slate-500">
-                      Format: <strong>2017/245323</strong> for undergraduate, or <strong>PG/M.SC/../......</strong> / <strong>Ph.D/.../....</strong> for postgraduate
-                    </p>
-                  </Field>
-
-                  <Field label="Document type">
-                    <select className="form-input" value={formData.documentType} onChange={handleChange("documentType")} required>
-                      <option value="">Select document type</option>
-                      <option>Transcript</option>
-                      <option>Certificate</option>
-                      <option>Academic record</option>
-                    </select>
-                  </Field>
-
-                  <Field label="First name">
-                    <input
-                      className="form-input"
-                      type="text"
-                      placeholder="Your first name"
-                      value={formData.firstName}
-                      onChange={handleChange("firstName")}
-                      required
-                    />
-                  </Field>
-
-                  <Field label="Other name">
-                    <input
-                      className="form-input"
-                      type="text"
-                      placeholder="Your other name"
-                      value={formData.otherName}
-                      onChange={handleChange("otherName")}
-                      required
-                    />
-                  </Field>
-
-                  <Field label="Surname">
-                    <input
-                      className="form-input"
-                      type="text"
-                      placeholder="Your surname"
-                      value={formData.surname}
-                      onChange={handleChange("surname")}
-                      required
-                    />
-                  </Field>
-
-                  <Field label="Phone number">
-                    <input
-                      className="form-input"
-                      type="tel"
-                      placeholder="Your phone number"
-                      value={formData.phoneNumber}
-                      onChange={handleChange("phoneNumber")}
-                      required
-                    />
-                  </Field>
-
-                  <Field label="E-mail">
-                    <input
-                      className="form-input"
-                      type="email"
-                      placeholder="you@example.com"
-                      value={formData.email}
-                      onChange={handleChange("email")}
-                      required
-                    />
-                  </Field>
-
-                  <Field label="Month of graduation">
-                    <select className="form-input" value={formData.monthOfGraduation} onChange={handleChange("monthOfGraduation")} required>
-                      <option value="">Select month</option>
-                      <option>January</option>
-                      <option>February</option>
-                      <option>March</option>
-                      <option>April</option>
-                      <option>May</option>
-                      <option>June</option>
-                      <option>July</option>
-                      <option>August</option>
-                      <option>September</option>
-                      <option>October</option>
-                      <option>November</option>
-                      <option>December</option>
-                    </select>
-                  </Field>
-
-                  <Field label="Year of graduation">
-                    <input
-                      className="form-input"
-                      type="text"
-                      placeholder="e.g. 2024"
-                      value={formData.yearOfGraduation}
-                      onChange={handleChange("yearOfGraduation")}
-                      required
-                    />
-                  </Field>
-                </div>
-              </section>
-
-              <section className="rounded-xl border border-white/60 bg-[#f1f3f3]/40 p-4 sm:p-5">
-                <div className="mb-4 flex items-center gap-3">
-                  <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-slate-900 text-[10px] font-semibold text-white">
-                    02
-                  </span>
-                  <h2 className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-500">
-                    Delivery details
-                  </h2>
-                </div>
-
-                <div className="grid gap-4 md:grid-cols-2">
-                  <Field label="Recipient institution / organization" className="md:col-span-2">
-                    <input
-                      className="form-input"
-                      type="text"
-                      placeholder="Who should receive your transcript?"
-                      value={formData.recipientInstitution}
-                      onChange={handleChange("recipientInstitution")}
-                      required
-                    />
-                  </Field>
-
-                  <Field label="Recipient address" className="md:col-span-2">
-                    <input
-                      className="form-input"
-                      type="text"
-                      placeholder="Street, city, country"
-                      value={formData.recipientAddress}
-                      onChange={handleChange("recipientAddress")}
-                      required
-                    />
-                  </Field>
-
-                  <fieldset className="md:col-span-2">
-                    <legend className="mb-2 block text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">
-                      Delivery method <span className="font-semibold text-red-500">*</span>
-                    </legend>
-                    <div className="grid gap-3 sm:grid-cols-2">
-                      <label className="flex cursor-pointer items-center gap-3 rounded-xl border border-slate-300 bg-white/50 p-3 transition has-[:checked]:border-[#173c5c] has-[:checked]:bg-white">
-                        <input
-                          className="h-4 w-4 accent-[#173c5c]"
-                          type="radio"
-                          name="deliveryMethod"
-                          value="email"
-                          checked={formData.deliveryMethod === "email"}
-                          onChange={() => selectDeliveryMethod("email")}
-                          disabled={isHardcopyTranscript}
-                          required
-                        />
-                        <span>
-                          <span className="block text-sm font-semibold text-slate-900">Email delivery</span>
-                          <span className="block text-xs text-slate-500">Receive the transcript electronically</span>
-                        </span>
-                      </label>
-                      <label className="flex cursor-pointer items-center gap-3 rounded-xl border border-slate-300 bg-white/50 p-3 transition has-[:checked]:border-[#173c5c] has-[:checked]:bg-white">
-                        <input
-                          className="h-4 w-4 accent-[#173c5c]"
-                          type="radio"
-                          name="deliveryMethod"
-                          value="dhl"
-                          checked={formData.deliveryMethod === "dhl"}
-                          onChange={() => selectDeliveryMethod("dhl")}
-                        />
-                        <span>
-                          <span className="block text-sm font-semibold text-slate-900">DHL delivery</span>
-                          <span className="block text-xs text-slate-500">Send a physical copy by courier</span>
-                        </span>
-                      </label>
-                    </div>
-                    {formData.deliveryMethod === "dhl" && (
-                      <div className="mt-3 flex flex-col gap-2 rounded-xl border border-[#173c5c]/20 bg-[#edf4f8]/60 p-3 sm:flex-row sm:items-center sm:justify-between">
-                        <div>
-                          <p className="text-xs font-semibold text-[#173c5c]">
-                            {formData.dhlState && formData.dhlCountry
-                              ? `DHL Destination: ${formData.dhlState}, ${formData.dhlCountry}`
-                              : "No DHL destination selected yet"}
-                          </p>
-                          {selectedDhlRate && selectedDhlRate.priceKobo !== null && (
-                            <p className="mt-0.5 text-xs text-slate-600">
-                              DHL courier fee: <span className="font-semibold text-slate-900">N{(selectedDhlRate.priceKobo / 100).toLocaleString("en-NG")}</span> (fetched from database)
+                      {formData.deliveryMethod === "dhl" && (
+                        <div className="mt-3 flex flex-col gap-2 rounded-xl border border-[#173c5c]/20 bg-[#edf4f8]/60 p-3 sm:flex-row sm:items-center sm:justify-between">
+                          <div>
+                            <p className="text-xs font-semibold text-[#173c5c]">
+                              {formData.dhlState && formData.dhlCountry
+                                ? `DHL Destination: ${formData.dhlState}, ${formData.dhlCountry}`
+                                : "No DHL destination selected yet"}
                             </p>
-                          )}
+                            {selectedDhlRate && selectedDhlRate.priceKobo !== null && (
+                              <p className="mt-0.5 text-xs text-slate-600">
+                                DHL courier fee: <span className="font-semibold text-slate-900">N{(selectedDhlRate.priceKobo / 100).toLocaleString("en-NG")}</span> (fetched from database)
+                              </p>
+                            )}
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => setIsDhlModalOpen(true)}
+                            className="inline-flex shrink-0 items-center justify-center rounded-lg border border-[#173c5c] bg-white px-3 py-1.5 text-xs font-semibold text-[#173c5c] shadow-sm hover:bg-[#edf4f8]"
+                          >
+                            {formData.dhlState ? "Change destination" : "Select destination →"}
+                          </button>
                         </div>
-                        <button
-                          type="button"
-                          onClick={() => setIsDhlModalOpen(true)}
-                          className="inline-flex shrink-0 items-center justify-center rounded-lg border border-[#173c5c] bg-white px-3 py-1.5 text-xs font-semibold text-[#173c5c] shadow-sm hover:bg-[#edf4f8]"
-                        >
-                          {formData.dhlState ? "Change destination" : "Select destination →"}
-                        </button>
-                      </div>
-                    )}
-                  </fieldset>
+                      )}
+                    </fieldset>
 
-                  <Field label="Reference number">
-                    <input
-                      className="form-input"
-                      type="text"
-                      placeholder="If applicable"
-                      value={formData.referenceNumber}
-                      onChange={handleChange("referenceNumber")}
-                    />
-                  </Field>
+                    <Field label="Reference number">
+                      <input
+                        className="form-input"
+                        type="text"
+                        placeholder="If applicable"
+                        value={formData.referenceNumber}
+                        onChange={handleChange("referenceNumber")}
+                      />
+                    </Field>
 
-                  <Field label="Receiver email address">
-                    <input
-                      className="form-input"
-                      type="email"
-                      placeholder="recipient@example.com"
-                      value={formData.receiverEmail}
-                      onChange={handleChange("receiverEmail")}
-                      required
-                    />
-                  </Field>
+                    <Field label="Receiver email address">
+                      <input
+                        className="form-input"
+                        type="email"
+                        placeholder="recipient@example.com"
+                        value={formData.receiverEmail}
+                        onChange={handleChange("receiverEmail")}
+                        required
+                      />
+                    </Field>
+                  </div>
+                </section>
+
+                <div className="flex flex-col items-start justify-between gap-4 border-t border-slate-200 pt-4 sm:flex-row sm:items-center">
+                  <p className="text-xs text-slate-500">
+                    Your details are safely used to process the transcript request.
+                  </p>
+                  {submitError && <p className="text-xs font-medium text-red-600">{submitError}</p>}
+                  <button
+                    type="submit"
+                    disabled={isSubmitting}
+                    className="inline-flex items-center justify-center rounded-lg bg-[#173c5c] px-6 py-3 text-sm font-semibold text-white shadow-[0_12px_24px_rgba(23,60,92,0.25)] transition hover:bg-[#12314a]"
+                  >
+                    {isSubmitting ? "Saving request..." : "Proceed to Payment →"}
+                  </button>
                 </div>
-              </section>
-
-              <div className="flex flex-col items-start justify-between gap-4 border-t border-slate-200 pt-4 sm:flex-row sm:items-center">
-                <p className="text-xs text-slate-500">
-                  Your details are safely used to process the transcript request.
-                </p>
-                {submitError && <p className="text-xs font-medium text-red-600">{submitError}</p>}
-                <button
-                  type="submit"
-                  disabled={isSubmitting}
-                  className="inline-flex items-center justify-center rounded-lg bg-[#173c5c] px-6 py-3 text-sm font-semibold text-white shadow-[0_12px_24px_rgba(23,60,92,0.25)] transition hover:bg-[#12314a]"
-                >
-                  {isSubmitting ? "Saving request..." : "Proceed to Payment →"}
-                </button>
-              </div>
-            </form>
-          </div>
-        </main>
+              </form>
+            </div>
+          </main>
+        </div>
       </div>
-    </div>
 
       <Link
         href="/assistant"

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useSyncExternalStore } from "react";
+import { useSearchParams } from "next/navigation";
 import UniversalNavbar from "../components/universal-navbar";
 import { formatNaira } from "../lib/transcript-options";
 
@@ -33,8 +34,16 @@ function parseRequest(snapshot: string | null) {
 }
 
 export default function PaymentClient() {
-  const requestValue = useSyncExternalStore(requestSubscription, requestSnapshot, emptyRequestSnapshot);
-  const request = parseRequest(requestValue);
+  const searchParams = useSearchParams();
+  const requestIdParam = searchParams.get("requestId");
+
+  const sessionRequestValue = useSyncExternalStore(requestSubscription, requestSnapshot, emptyRequestSnapshot);
+  const sessionRequest = parseRequest(sessionRequestValue);
+  const [fetchedRequest, setFetchedRequest] = useState<RequestData | null>(null);
+  const [isLoadingSavedRequest, setIsLoadingSavedRequest] = useState(false);
+  const [requestLoadError, setRequestLoadError] = useState("");
+
+  const request = fetchedRequest || sessionRequest;
   const [options, setOptions] = useState<TranscriptOption[]>([]);
   const [paymentStatus, setPaymentStatus] = useState("");
   const [pendingReference, setPendingReference] = useState("");
@@ -56,6 +65,79 @@ export default function PaymentClient() {
     } catch {}
     window.location.href = "/";
   };
+
+  // Recover request from database if requestId is in URL or session is empty
+  useEffect(() => {
+    const idToFetch = requestIdParam || (!sessionRequest ? sessionStorage.getItem("last-transcript-request-id") : null);
+    if (!idToFetch || !/^\d+$/.test(idToFetch)) return;
+
+    let active = true;
+    setIsLoadingSavedRequest(true);
+    fetch(`/api/transcript-requests?requestId=${encodeURIComponent(idToFetch)}`, { cache: "no-store" })
+      .then(async (response) => {
+        const result = (await response.json()) as {
+          request?: {
+            id: string;
+            transcriptFormat: string;
+            firstName: string;
+            surname: string;
+            email: string;
+            deliveryMethod?: "email" | "dhl";
+            dhlContinent?: string;
+            dhlCountry?: string;
+            dhlState?: string;
+            dhlDeliveryPriceKobo?: number | null;
+            paymentStatus?: string;
+            paymentReference?: string;
+          };
+          error?: string;
+        };
+
+        if (!response.ok || !result.request) {
+          throw new Error(result.error || "Unable to retrieve your saved request");
+        }
+
+        if (active) {
+          const req = result.request;
+          const recovered: RequestData = {
+            requestId: req.id,
+            transcriptFormat: req.transcriptFormat,
+            firstName: req.firstName,
+            surname: req.surname,
+            email: req.email,
+            deliveryMethod: req.deliveryMethod,
+            dhlContinent: req.dhlContinent,
+            dhlCountry: req.dhlCountry,
+            dhlState: req.dhlState,
+            dhlDeliveryPriceKobo: req.dhlDeliveryPriceKobo,
+          };
+          setFetchedRequest(recovered);
+          try {
+            sessionStorage.setItem("transcript-request", JSON.stringify(recovered));
+          } catch {}
+
+          // If the request was already paid in the database, prevent duplicate payment and show success
+          if (req.paymentStatus === "paid") {
+            setPaymentSuccessData({
+              reference: req.paymentReference || "CONFIRMED",
+              amount: 0, // will be updated once options are loaded
+              emailSent: true,
+              serviceName: req.transcriptFormat,
+              applicantName: `${req.firstName} ${req.surname}`.trim(),
+              applicantEmail: req.email,
+            });
+          }
+        }
+      })
+      .catch((err: unknown) => {
+        if (active) setRequestLoadError(err instanceof Error ? err.message : "Unable to resume saved request");
+      })
+      .finally(() => {
+        if (active) setIsLoadingSavedRequest(false);
+      });
+
+    return () => { active = false; };
+  }, [requestIdParam, sessionRequest]);
 
   useEffect(() => {
     let active = true;
@@ -275,8 +357,23 @@ export default function PaymentClient() {
       <div className="flex min-h-screen flex-col bg-slate-100">
         <UniversalNavbar pageTitle="Payment Checkout" badge="Secure" theme="white" hideUser={true} />
         <div className="flex flex-1 items-center justify-center px-4">
-          <div className="rounded-2xl bg-white p-6 text-center shadow-sm">
-            <p className="text-sm text-slate-600">{optionsError || "Loading your request and transcript pricing..."}</p>
+          <div className="max-w-md rounded-2xl bg-white p-6 text-center shadow-sm">
+            <p className="text-sm font-medium text-slate-800">
+              {isLoadingSavedRequest
+                ? "Resuming your saved transcript request..."
+                : requestLoadError || optionsError || "Your request details are missing or expired."}
+            </p>
+            {!isLoadingSavedRequest && (
+              <div className="mt-4 flex justify-center gap-3">
+                <button
+                  type="button"
+                  onClick={() => window.location.href = "/"}
+                  className="rounded-xl bg-[#173c5c] px-4 py-2 text-xs font-semibold text-white hover:bg-[#12314a]"
+                >
+                  Start New Request
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </div>

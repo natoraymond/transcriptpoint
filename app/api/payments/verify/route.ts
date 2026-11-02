@@ -79,6 +79,17 @@ export async function POST(request: Request) {
     if (!savedRequest) {
       return NextResponse.json({ error: "Transcript request not found" }, { status: 404 });
     }
+
+    // Prevent duplicate charges: If already paid, confirm immediately
+    if (savedRequest.paymentStatus === "paid") {
+      return NextResponse.json({
+        paymentConfirmed: true,
+        alreadyPaid: true,
+        emailSent: Boolean(savedRequest.paymentEmailSentAt),
+        reference: savedRequest.paymentReference || reference,
+      });
+    }
+
     const currentUser = await getCurrentUser();
     if (savedRequest.userId && (!currentUser || currentUser.id !== String(savedRequest.userId))) {
       return NextResponse.json({ error: "Sign in with the account used to submit this request before confirming payment" }, { status: 403 });

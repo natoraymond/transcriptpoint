@@ -49,22 +49,63 @@ export async function POST(request: Request) {
 
     const sql = getDatabase();
 
-    // 1. Fetch live services & pricing from the database
-    const activeTranscriptOptions = await sql`
-      SELECT label, amount_ngn AS amount, category, requires_dhl AS "requiresDhl"
-      FROM transcript_options
-      WHERE is_active = TRUE
-      ORDER BY display_order, label
-    `;
+    const fallbackTranscriptOptions = [
+      { label: "Official Softcopy (Nigeria)", amount: 17000, category: "Softcopy transcript", requiresDhl: false },
+      { label: "Official Softcopy (Outside Nigeria)", amount: 29000, category: "Softcopy transcript", requiresDhl: false },
+      { label: "Softcopy Transcript / English Proficiency (Nigeria)", amount: 22000, category: "Softcopy transcript", requiresDhl: false },
+      { label: "Softcopy Transcript / English Proficiency (Outside Nigeria)", amount: 34000, category: "Softcopy transcript", requiresDhl: false },
+      { label: "Softcopy English Proficiency (Nigeria)", amount: 8000, category: "Softcopy transcript", requiresDhl: false },
+      { label: "Students Softcopy", amount: 7000, category: "Other services", requiresDhl: false },
+      { label: "Hardcopy Transcript", amount: 0, category: "Hardcopy transcript", requiresDhl: true },
+      { label: "Transcript Verification", amount: 12000, category: "Other services", requiresDhl: false },
+      { label: "Certificate Verification", amount: 12000, category: "Other services", requiresDhl: false },
+    ];
+
+    let activeTranscriptOptions: Array<{ label: string; amount: number; category: string; requiresDhl: boolean }> = [];
+    try {
+      const rows = await sql`
+        SELECT label, amount_ngn AS amount, category, requires_dhl AS "requiresDhl"
+        FROM transcript_options
+        WHERE is_active = TRUE
+        ORDER BY display_order, label
+      `;
+      activeTranscriptOptions = rows.map((r) => ({
+        label: String(r.label),
+        amount: Number(r.amount),
+        category: String(r.category),
+        requiresDhl: Boolean(r.requiresDhl),
+      }));
+    } catch {
+      activeTranscriptOptions = fallbackTranscriptOptions;
+    }
+    if (activeTranscriptOptions.length === 0) {
+      activeTranscriptOptions = fallbackTranscriptOptions;
+    }
 
     // 2. Fetch sample DHL rates from database
-    const dhlSampleRates = await sql`
-      SELECT country_name AS country, state_name AS state, price_kobo AS price
-      FROM dhl_delivery_rates
-      WHERE price_kobo IS NOT NULL
-      ORDER BY country_name, state_name
-      LIMIT 10
-    `;
+    let dhlSampleRates: Array<{ country: string; state: string; price: number }> = [];
+    try {
+      const rows = await sql`
+        SELECT country_name AS country, state_name AS state, price_kobo AS price
+        FROM dhl_delivery_rates
+        WHERE price_kobo IS NOT NULL
+        ORDER BY country_name, state_name
+        LIMIT 10
+      `;
+      dhlSampleRates = rows.map((r) => ({
+        country: String(r.country),
+        state: String(r.state),
+        price: Number(r.price),
+      }));
+    } catch {
+      dhlSampleRates = [
+        { country: "Nigeria", state: "Enugu", price: 2450000 },
+        { country: "Nigeria", state: "Lagos", price: 2450000 },
+        { country: "Nigeria", state: "Abuja", price: 2450000 },
+        { country: "United Kingdom", state: "London", price: 6800000 },
+        { country: "United States", state: "New York", price: 7200000 },
+      ];
+    }
 
     // 3. If user is logged in, fetch their recent request status from database
     let userRequestsContext = "";
@@ -109,8 +150,9 @@ export async function POST(request: Request) {
 
     // Check for general processing time questions
     const isProcessingTimeQuestion =
-      (lower.includes("processing") || lower.includes("ready") || lower.includes("how long") || lower.includes("when will") || lower.includes("duration") || lower.includes("timeline")) &&
-      (lower.includes("transcript") || lower.includes("english proficiency") || lower.includes("proficiency") || lower.includes("request") || lower.includes("document"));
+      !isAppliedNotReceivedQuestion &&
+      (lower.includes("processing") || lower.includes("ready") || lower.includes("how long") || lower.includes("when will") || lower.includes("duration") || lower.includes("timeline") || lower.includes("sla")) &&
+      (lower.includes("transcript") || lower.includes("english proficiency") || lower.includes("proficiency") || lower.includes("request") || lower.includes("document") || lower.includes("take") || lower.includes("get"));
 
     let directAnswer: string | null = null;
 
@@ -120,11 +162,13 @@ export async function POST(request: Request) {
         "Standard degree transcript processing and verification at the university records office takes two weeks+ (14 to 21 working days) from when your payment was verified.\n\n" +
         "• If you opted for Official Softcopy: It will be electronically transmitted to your recipient institution or email as soon as processing completes.\n" +
         "• If you opted for Hardcopy delivery: DHL tracking details will be dispatched immediately to your phone and email once picked up from campus.\n\n" +
-        "You can also sign in to check your live real-time progress under 'My Dashboard'. We are monitoring every batch closely!";
+        "You can check your real-time status anytime under 'My Dashboard'. We are monitoring every batch closely!";
     } else if (isProcessingTimeQuestion) {
       directAnswer =
         "Processing of your academic transcript or English proficiency document is typically ready in two weeks+ (14 to 21 working days) from the date payment is confirmed and academic records are verified at your campus.\n\n" +
-        "You can track the live status anytime under 'My Dashboard'. Once processing is completed, you will receive an immediate email notification with your dispatch details or official softcopy link.";
+        "• Softcopy requests: Sent immediately upon completion to the recipient email and your inbox.\n" +
+        "• Hardcopy requests: Handed to DHL courier for secure door-to-door delivery with live tracking.\n\n" +
+        "You can track the progress anytime in your dashboard under 'Track Request' or 'My Dashboard'.";
     }
 
     // Save conversation in DB if conversationId is valid
@@ -200,22 +244,38 @@ Rules:
 
     // Comprehensive database-backed rule engine fallback if AI service key is absent or unreachable
     if (!finalAnswer) {
-      if (lower.includes("price") || lower.includes("cost") || lower.includes("how much") || lower.includes("fee") || lower.includes("amount") || lower.includes("services")) {
+      if (lower.includes("dhl") || lower.includes("courier") || lower.includes("shipping") || lower.includes("delivery cost") || lower.includes("delivery rate") || lower.includes("postage")) {
+        finalAnswer = `Hardcopy transcript delivery is handled securely via DHL courier. Delivery rates are calculated based on your destination country and state:\n\n${sampleDhlText}\n\n• For destinations within Nigeria: Rates are mapped directly from our database.\n• For deliveries outside Nigeria: Rates correspond to DHL international zone tariffs. You can select your country and state directly in the DHL delivery popup modal on the request form.`;
+      } else if (lower.includes("price") || lower.includes("cost") || lower.includes("how much") || lower.includes("fee") || lower.includes("amount") || lower.includes("services") || lower.includes("tariff") || lower.includes("rates")) {
         finalAnswer = `Here are the official fees and services configured in our database:\n\n${servicesList}\n\nYou can select any of these directly on the Request page (/request).`;
-      } else if (lower.includes("dhl") || lower.includes("delivery") || lower.includes("shipping")) {
-        finalAnswer = `Hardcopy transcript delivery is handled securely via DHL. Delivery rates are calculated based on your destination country and state:\n\n${sampleDhlText}\n\nFor hardcopy deliveries outside Nigeria, rates are set according to DHL zone tariffs configured in the portal database.`;
-      } else if (lower.includes("track") || lower.includes("status") || lower.includes("check")) {
+      } else if (lower.includes("track") || lower.includes("status") || lower.includes("check status") || lower.includes("progress") || lower.includes("where is my")) {
         if (userRequestsContext) {
-          finalAnswer = `Here is your recent request information from our database:\n${userRequestsContext}\n\nYou can also view full tracking details under 'My Dashboard'.`;
+          finalAnswer = `Here is your recent request information from our database:\n${userRequestsContext}\n\nYou can view your live processing status anytime under 'My Dashboard'.`;
         } else {
-          finalAnswer = "You can track the progress of your transcript or document request anytime in your dashboard under 'Track Request' or 'My Dashboard'. Make sure to sign in with your student/user account.";
+          finalAnswer = "You can track the live progress of your transcript or document request in your dashboard under 'Track Request' or 'My Dashboard'. If you submitted as a guest, your status updates and delivery tracking are also delivered directly to your email address.";
         }
+      } else if (lower.includes("matric") || lower.includes("matriculation") || lower.includes("number format")) {
+        finalAnswer = "For matriculation numbers:\n• Undergraduate format: 4-digit enrollment year followed by student serial digits, e.g. 2017/245323.\n• Postgraduate format: Starts with degree code, e.g. PG/M.SC/../...... or Ph.D/.../.....\n\nPlease ensure you enter it without spaces according to your study level.";
+      } else if (lower.includes("english proficiency") || lower.includes("proficiency certificate") || lower.includes("language proficiency")) {
+        finalAnswer = "TranscriptPoint provides verified English Proficiency Certificates issued by the academic records office:\n• Softcopy English Proficiency (Nigeria): ₦8,000\n• Softcopy Transcript + English Proficiency (Nigeria): ₦22,000\n• Softcopy Transcript + English Proficiency (Outside Nigeria): ₦34,000\n\nStandard processing timeline is two weeks+ (14 to 21 working days).";
+      } else if (lower.includes("verification") || lower.includes("verify transcript") || lower.includes("verify certificate")) {
+        finalAnswer = "We provide official verification services for third parties, employers, and academic institutions:\n• Transcript Verification: ₦12,000\n• Certificate Verification: ₦12,000\n\nYou can select either service on the Request page, submit the candidate details, and the clearinghouse will verify the credential against university archives.";
+      } else if (lower.includes("payment") || lower.includes("pay") || lower.includes("paystack") || lower.includes("card") || lower.includes("bank transfer")) {
+        finalAnswer = "Payment on TranscriptPoint is handled securely through Paystack:\n• Accepted payment methods: Debit/Credit cards (Mastercard, Visa, Verve), Bank Transfers, and USSD.\n• All fees are billed in Nigerian Naira (NGN).\n• If a payment attempt fails or is interrupted, you can resume your saved application anytime from your Dashboard or by reopening the payment page without re-entering your details.";
+      } else if (lower.includes("campus") || lower.includes("campuses") || lower.includes("nsukka") || lower.includes("enugu")) {
+        finalAnswer = "TranscriptPoint processes requests across University of Nigeria campuses and affiliated colleges, including:\n• Nsukka Campus\n• Enugu Campus\n• UNN Sandwich & UNN Diploma programs\n• Nwafor-Orizu College of Education, Nsugbe\n• Alvan Ikoku College of Education\n• Distance Learning & affiliate centers\n\nSelect your campus in the first section of the request form.";
+      } else if (/\b(hello|hi|hey|good day|good morning|good afternoon|good evening)\b/i.test(lower)) {
+        finalAnswer = "Hello! 👋 Welcome to TranscriptPoint Support Desk. How can we assist you with your transcript request, English proficiency document, DHL delivery, or payment today?";
+      } else if (lower.includes("contact") || lower.includes("email") || lower.includes("desk") || lower.includes("phone number") || lower.includes("reach support")) {
+        finalAnswer = "You can reach our dedicated records and support team at:\n• Email: support@transcriptpoint.com\n• Live Help Desk: Available 24/7 through this chat\n• Inquiries: Questions regarding document processing, DHL courier tracking, and verification.";
+      } else if (lower.includes("how to apply") || lower.includes("how to request") || lower.includes("procedure") || lower.includes("steps") || lower.includes("new request")) {
+        finalAnswer = "Applying for an official transcript or document is simple:\n1. Open the Transcript Request portal form on the home page or click 'New Request'.\n2. Fill in your Student Details (Campus, Mode of Admission, Level of Study, Matriculation Number, Document Type, Name, and Contact details).\n3. Enter the Recipient details and select delivery method (Official Softcopy via email or Hardcopy via DHL Courier).\n4. Submit and complete payment via Paystack.\n\nOnce completed, your application is queued immediately and ready in two weeks+.";
       } else {
         finalAnswer = `Welcome to TranscriptPoint Support! We provide end-to-end academic transcript processing, English proficiency certificates, and DHL delivery across all accredited campuses.\n\n` +
           `• Document Processing Timeline: Standard processing is ready in two weeks+ (14 to 21 working days).\n` +
           `• Services Available: Official Softcopy, Hardcopy via DHL, English Proficiency, and Verification.\n` +
-          `• To start a request: Visit our New Request page (/request) or click 'Get Started'.\n\n` +
-          `How may we assist you today?`;
+          `• To start a request: Visit our New Request page (/request) or the request form modal on the home page.\n\n` +
+          `Feel free to ask about specific fees, DHL shipping rates, tracking, or campus requirements. How may we assist you today?`;
       }
     }
 

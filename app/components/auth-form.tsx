@@ -25,6 +25,7 @@ export default function AuthForm({ mode, next, verification, expired }: Props) {
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
@@ -62,6 +63,12 @@ export default function AuthForm({ mode, next, verification, expired }: Props) {
     event.preventDefault();
     setError("");
     setNotice("");
+
+    if (isSignUp && password !== confirmPassword) {
+      setError("The passwords do not match.");
+      return;
+    }
+
     setIsSubmitting(true);
     try {
       const response = await fetch(`/api/auth/${isSignUp ? "register" : "login"}`, {
@@ -70,7 +77,7 @@ export default function AuthForm({ mode, next, verification, expired }: Props) {
         body: JSON.stringify({
           email,
           password,
-          ...(isSignUp ? { fullName, role } : {}),
+          ...(isSignUp ? { fullName, role, confirmPassword } : {}),
         }),
       });
       const result = (await response.json()) as {
@@ -451,6 +458,25 @@ export default function AuthForm({ mode, next, verification, expired }: Props) {
                     </button>
                   </div>
                 </div>
+
+                {isSignUp && (
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700">Confirm password</label>
+                    <div className="relative mt-2">
+                      <input
+                        type={showPassword ? "text" : "password"}
+                        value={confirmPassword}
+                        onChange={(event) => setConfirmPassword(event.target.value)}
+                        className="form-input pr-16"
+                        autoComplete="new-password"
+                        minLength={9}
+                        maxLength={200}
+                        placeholder="Re-enter password"
+                        required
+                      />
+                    </div>
+                  </div>
+                )}
 
                 {isSignUp && (
                   <p className="text-xs text-slate-500">

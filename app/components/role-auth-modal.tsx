@@ -34,6 +34,7 @@ export default function RoleAuthModal({
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
@@ -91,6 +92,12 @@ export default function RoleAuthModal({
     event.preventDefault();
     setError("");
     setNotice("");
+
+    if (authMode === "sign-up" && password !== confirmPassword) {
+      setError("The passwords do not match.");
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
@@ -103,6 +110,7 @@ export default function RoleAuthModal({
       if (authMode === "sign-up") {
         payload.fullName = fullName.trim();
         payload.role = selectedRole;
+        payload.confirmPassword = confirmPassword;
       }
 
       const response = await fetch(endpoint, {
@@ -506,6 +514,26 @@ export default function RoleAuthModal({
                     </button>
                   </div>
                 </div>
+
+                {authMode === "sign-up" && (
+                  <div>
+                    <label className="block text-[11px] font-semibold text-slate-700">
+                      Confirm Password <span className="text-red-500">*</span>
+                    </label>
+                    <div className="relative mt-1">
+                      <input
+                        type={showPassword ? "text" : "password"}
+                        value={confirmPassword}
+                        onChange={(e) => setConfirmPassword(e.target.value)}
+                        placeholder="Re-enter password"
+                        className="form-input py-2 pr-12 text-xs"
+                        minLength={9}
+                        maxLength={200}
+                        required
+                      />
+                    </div>
+                  </div>
+                )}
 
                 <button
                   type="submit"

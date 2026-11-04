@@ -24,13 +24,24 @@ export async function POST(request: Request) {
   if (!checkSameOrigin(request)) return NextResponse.json({ error: "Invalid request origin" }, { status: 403 });
 
   try {
-    const body = (await request.json()) as { email?: unknown; password?: unknown; fullName?: unknown; role?: unknown };
+    const body = (await request.json()) as {
+      email?: unknown;
+      password?: unknown;
+      confirmPassword?: unknown;
+      fullName?: unknown;
+      role?: unknown;
+    };
     const email = typeof body.email === "string" ? normalizeEmail(body.email) : "";
     const password = typeof body.password === "string" ? body.password : "";
+    const confirmPassword = typeof body.confirmPassword === "string" ? body.confirmPassword : "";
     const fullName = typeof body.fullName === "string" ? body.fullName.trim() : "";
     const requestedRole = typeof body.role === "string" ? body.role.toLowerCase().trim() : "user";
     const wantsAdmin = requestedRole === "admin";
     const configuredMaxAccounts = Number(process.env.MAX_PORTAL_ACCOUNTS ?? 10000);
+
+    if (body.confirmPassword !== undefined && password !== confirmPassword) {
+      return NextResponse.json({ error: "The passwords do not match" }, { status: 400 });
+    }
 
     if (
       !emailPattern.test(email) ||

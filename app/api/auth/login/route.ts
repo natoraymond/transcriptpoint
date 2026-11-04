@@ -63,12 +63,11 @@ export async function POST(request: Request) {
     }
 
     if (!row.emailVerifiedAt) {
-      // Auto-verify administrators and users when Resend email service is not configured
-      if (row.role === "admin" || row.role === "super_admin" || !process.env.RESEND_API_KEY) {
-        await sql`UPDATE portal_users SET email_verified_at = NOW(), updated_at = NOW() WHERE id = ${row.id}`;
-      } else {
-        return NextResponse.json({ error: "Verify your email address using the link we sent before signing in" }, { status: 403 });
-      }
+      return NextResponse.json({
+        error: "Please verify ownership of your email address using the 6-digit OTP sent to your email before signing in.",
+        requiresOtp: true,
+        email: row.email,
+      }, { status: 403 });
     }
 
     await sql`DELETE FROM portal_login_attempts WHERE attempt_key = ${attemptKey}`;

@@ -1,13 +1,10 @@
 import { NextResponse } from "next/server";
-import { createHash, randomBytes } from "node:crypto";
+import { createHash, randomInt } from "node:crypto";
 import {
-  adminPermissions,
   checkSameOrigin,
-  createSession,
   ensureAuthSchema,
   hashPassword,
   normalizeEmail,
-  publicUser,
   recordActivity,
 } from "../../../lib/auth";
 import { getDatabase } from "../../../lib/db";
@@ -75,85 +72,81 @@ export async function POST(request: Request) {
       );
     }
 
-    // If registering as admin and no super_admin exists yet, grant super_admin privilege
-    const isFirstAdmin = Number(countRow?.activeSuperAdminCount ?? 0) === 0 && wantsAdmin;
-    const finalRole: "super_admin" | "admin" | "user" = isFirstAdmin ? "super_admin" : wantsAdmin ? "admin" : "user";
-
-    const passwordHash = await hashPassword(password);
-    const isElevatedRole = finalRole === "admin" || finalRole === "super_admin";
-    const permissions = isElevatedRole ? [...defaultAdminPermissions] : [];
-
-    const [user] = await sql`
-      INSERT INTO portal_users (email, password_hash, full_name, role, permissions, is_active, email_verified_at)
-      VALUES (
-        ${email},
-        ${passwordHash},
-        ${fullName},
-        ${finalRole},
-        ${JSON.stringify(permissions)}::jsonb,
-        TRUE,
-        NOW()
-      )
-      ON CONFLICT (email) DO NOTHING
-      RETURNING id, email, full_name AS "fullName", role, permissions, is_active AS "isActive", email_verified_at AS "emailVerifiedAt"
+    // Check if account already exists
+    const [existingUser] = await sql`
+      SELECT id, email_verified_at AS "emailVerifiedAt"
+      FROM portal_users
+      WHERE email = ${email}
+      LIMIT 1
     `;
 
-    if (!user) {
-      return NextResponse.json({ error: "An account with this email address already exists" }, { status: 409 });
+    let userId: string;
+
+    if (existingUser) {
+      // If the email is already verified, reject registration
+      if (existingUser.emailVerifiedAt) {
+        return NextResponse.json({ error: "An account with this email address already exists" }, { status: 409 });
+      }
+      // If user registered earlier but never verified OTP, update password/name and resend OTP
+      userId = String(existingUser.id);
+      const passwordHash = await hashPassword(password);
+      await sql`
+        UPDATE portal_users
+        SET password_hash = ${passwordHash}, full_name = ${fullName}, updated_at = NOW()
+        WHERE id = ${userId}
+      `;
+    } else {
+      // If registering as admin and no super_admin exists yet, grant super_admin privilege
+      const isFirstAdmin = Number(countRow?.activeSuperAdminCount ?? 0) === 0 && wantsAdmin;
+      const finalRole: "super_admin" | "admin" | "user" = isFirstAdmin ? "super_admin" : wantsAdmin ? "admin" : "user";
+
+      const passwordHash = await hashPassword(password);
+      const isElevatedRole = finalRole === "admin" || finalRole === "super_admin";
+      const permissions = isElevatedRole ? [...defaultAdminPermissions] : [];
+
+      // Require email OTP verification: email_verified_at is NULL initially
+      const [user] = await sql`
+        INSERT INTO portal_users (email, password_hash, full_name, role, permissions, is_active, email_verified_at)
+        VALUES (
+          ${email},
+          ${passwordHash},
+          ${fullName},
+          ${finalRole},
+          ${JSON.stringify(permissions)}::jsonb,
+          TRUE,
+          NULL
+        )
+        ON CONFLICT (email) DO NOTHING
+        RETURNING id
+      `;
+
+      if (!user) {
+        return NextResponse.json({ error: "An account with this email address already exists" }, { status: 409 });
+      }
+      userId = String(user.id);
+
+      if (isFirstAdmin) {
+        await sql`
+          UPDATE portal_settings
+          SET initial_super_admin_created_at = NOW(), updated_at = NOW()
+          WHERE id = TRUE
+        `;
+      }
     }
 
-    // Update portal_settings bootstrap timestamp
-    if (isFirstAdmin) {
-      await sql`
-        UPDATE portal_settings
-        SET initial_super_admin_created_at = NOW(), updated_at = NOW()
-        WHERE id = TRUE
-      `;
-    }
+    // Generate a secure 6-digit OTP code (100000 - 999999)
+    const otpCode = randomInt(100000, 1000000).toString();
+    const otpHash = createHash("sha256").update(otpCode).digest("hex");
+
+    // Invalidate prior active OTPs for this email and insert new one with 15-minute expiry
+    await sql`DELETE FROM portal_email_otps WHERE email = ${email}`;
+    await sql`
+      INSERT INTO portal_email_otps (email, otp_hash, user_id, expires_at)
+      VALUES (${email}, ${otpHash}, ${userId}, NOW() + INTERVAL '15 minutes')
+    `;
 
     const resendApiKey = process.env.RESEND_API_KEY;
     const emailFrom = process.env.EMAIL_FROM;
-    const appUrlValue = process.env.APP_URL || "http://localhost:3000";
-
-    // Immediate active login and session for administrators
-    if (isElevatedRole) {
-      await createSession(String(user.id));
-      await recordActivity(String(user.id), "admin_account_created", { role: finalRole });
-
-      if (resendApiKey && emailFrom) {
-        try {
-          const resend = new Resend(resendApiKey);
-          await resend.emails.send({
-            from: emailFrom,
-            to: email,
-            subject: `Welcome to TranscriptPoint - ${finalRole === "super_admin" ? "Super Admin" : "Administrator"} Account Activated`,
-            text: `Hello ${fullName},\n\nYour TranscriptPoint Administrator account (${email}) has been successfully created and activated.\n\nYou can access your dashboard anytime at: ${appUrlValue}/admin\n\nBest regards,\nTranscriptPoint Administration`,
-          });
-        } catch (emailError) {
-          console.error("Unable to send admin welcome email", emailError);
-        }
-      }
-
-      return NextResponse.json(
-        {
-          message: `${finalRole === "super_admin" ? "Super Admin" : "Administrator"} account created successfully! You are now logged in.`,
-          user: publicUser({
-            id: String(user.id),
-            email: String(user.email),
-            fullName: String(user.fullName),
-            phoneNumber: "",
-            role: finalRole,
-            permissions: [...defaultAdminPermissions],
-            isActive: true,
-          }),
-        },
-        { status: 201 },
-      );
-    }
-
-    // Standard user flow: auto-activate and login immediately
-    await createSession(String(user.id));
-    await recordActivity(String(user.id), "account_created", { role: "user" });
 
     if (resendApiKey && emailFrom) {
       try {
@@ -161,28 +154,25 @@ export async function POST(request: Request) {
         await resend.emails.send({
           from: emailFrom,
           to: email,
-          subject: "Welcome to TranscriptPoint",
-          text: `Hello ${fullName},\n\nYour TranscriptPoint account has been successfully created.\n\nSign in anytime at: ${appUrlValue}/sign-in\n\nBest regards,\nTranscriptPoint Team`,
+          subject: `${otpCode} is your TranscriptPoint verification code`,
+          text: `Hello ${fullName},\n\nYour 6-digit verification code to confirm ownership of your email address is:\n\n${otpCode}\n\nThis code will expire in 15 minutes. For your security, do not share this code with anyone.\n\nBest regards,\nTranscriptPoint Security`,
         });
       } catch (emailError) {
-        console.error("Unable to send user welcome email", emailError);
+        console.error("Unable to send OTP verification email", emailError);
       }
+    } else {
+      console.log(`[DEVELOPMENT / LOCAL] Email OTP verification code for ${email}: ${otpCode}`);
     }
+
+    await recordActivity(userId, "otp_requested", { email });
 
     return NextResponse.json(
       {
-        message: "Account created successfully! You are now signed in.",
-        user: publicUser({
-          id: String(user.id),
-          email: String(user.email),
-          fullName: String(user.fullName),
-          phoneNumber: "",
-          role: "user",
-          permissions: [],
-          isActive: true,
-        }),
+        message: "A 6-digit verification code has been sent to your email. Enter it below to complete registration.",
+        requiresOtp: true,
+        email,
       },
-      { status: 201 },
+      { status: 200 },
     );
   } catch (error) {
     console.error("Unable to register portal user", error);

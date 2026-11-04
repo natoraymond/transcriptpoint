@@ -68,6 +68,18 @@ CREATE TABLE IF NOT EXISTS portal_email_verification_tokens (
 ALTER TABLE portal_email_verification_tokens
   ADD COLUMN IF NOT EXISTS purpose TEXT NOT NULL DEFAULT 'verify';
 
+CREATE TABLE IF NOT EXISTS portal_email_otps (
+  id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  email TEXT NOT NULL,
+  otp_hash TEXT NOT NULL,
+  user_id UUID REFERENCES portal_users(id) ON DELETE CASCADE,
+  attempts INTEGER NOT NULL DEFAULT 0,
+  expires_at TIMESTAMPTZ NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS portal_email_otps_email_idx ON portal_email_otps (email, expires_at DESC);
+
 CREATE TABLE IF NOT EXISTS portal_login_attempts (
   attempt_key TEXT PRIMARY KEY,
   attempts INTEGER NOT NULL DEFAULT 0,

@@ -58,6 +58,18 @@ export async function ensureAuthSchema() {
         created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
       )
     `;
+    await sql`
+      CREATE TABLE IF NOT EXISTS portal_email_otps (
+        id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+        email TEXT NOT NULL,
+        otp_hash TEXT NOT NULL,
+        user_id UUID REFERENCES portal_users(id) ON DELETE CASCADE,
+        attempts INTEGER NOT NULL DEFAULT 0,
+        expires_at TIMESTAMPTZ NOT NULL,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      )
+    `;
+    await sql`CREATE INDEX IF NOT EXISTS portal_email_otps_email_idx ON portal_email_otps (email, expires_at DESC)`;
     schemaEnsured = true;
   } catch (err) {
     console.error("Schema ensure warning:", err);

@@ -25,6 +25,43 @@ type PortalUser = {
   createdAt: string;
   lastActivityAt: string | null;
 };
+type PaymentRequestRecord = {
+  id: string;
+  campus: string;
+  transcriptFormat: string;
+  transcriptFormatLabel: string | null;
+  transcriptCategory: string | null;
+  modeOfAdmission: string;
+  levelOfStudy: string;
+  matriculationNumber: string;
+  documentType: string;
+  firstName: string;
+  otherName: string | null;
+  surname: string;
+  fullName: string;
+  phoneNumber: string;
+  email: string;
+  monthOfGraduation: string;
+  yearOfGraduation: number;
+  recipientInstitution: string;
+  recipientAddress: string;
+  deliveryMethod: "email" | "dhl";
+  dhlContinent: string | null;
+  dhlCountry: string | null;
+  dhlCountryCode: string | null;
+  dhlState: string | null;
+  dhlDeliveryPriceKobo: number | null;
+  referenceNumber: string | null;
+  receiverEmail: string;
+  status: string;
+  paymentStatus: "paid" | "pending" | "failed";
+  paymentReference: string | null;
+  amount: number;
+  transcriptAmount: number;
+  createdAt: string;
+  updatedAt: string;
+};
+
 type SuperAdminData = {
   stats: {
     total: number;
@@ -42,6 +79,7 @@ type SuperAdminData = {
   };
   products: Array<{ value: string; label: string; category: string; amount: number; isActive: boolean; requiresDhl: boolean }>;
   activity: Array<{ id: number; action: string; details: Record<string, unknown>; createdAt: string; actorName: string; actorEmail: string }>;
+  paymentRequests?: PaymentRequestRecord[];
 };
 
 const defaultAdminPermissions = ["dashboard.read", "requests.read", "requests.update", "payments.read", "users.read", "users.update"];
@@ -79,6 +117,11 @@ export default function SuperAdminDashboard({
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [avatarNotice, setAvatarNotice] = useState("");
   const [avatarError, setAvatarError] = useState("");
+
+  // Payment requests & detail view state
+  const [paymentFilter, setPaymentFilter] = useState<"all" | "paid" | "pending">("all");
+  const [paymentSearch, setPaymentSearch] = useState("");
+  const [selectedPaymentRequest, setSelectedPaymentRequest] = useState<PaymentRequestRecord | null>(null);
 
   const loadUsers = useCallback(async () => {
     setError("");
@@ -265,6 +308,20 @@ export default function SuperAdminDashboard({
   const filteredUsers = users.filter((user) =>
     `${user.fullName} ${user.email} ${user.role}`.toLowerCase().includes(search.trim().toLowerCase()),
   );
+
+  const filteredPaymentRequests = (monitoring?.paymentRequests ?? []).filter((req) => {
+    if (paymentFilter !== "all" && req.paymentStatus !== paymentFilter) return false;
+    if (!paymentSearch.trim()) return true;
+    const q = paymentSearch.toLowerCase();
+    return (
+      req.fullName.toLowerCase().includes(q) ||
+      req.email.toLowerCase().includes(q) ||
+      req.matriculationNumber.toLowerCase().includes(q) ||
+      (req.paymentReference && req.paymentReference.toLowerCase().includes(q)) ||
+      (req.referenceNumber && req.referenceNumber.toLowerCase().includes(q)) ||
+      req.campus.toLowerCase().includes(q)
+    );
+  });
   const counts = monitoring?.stats ?? {
     total: users.length,
     admins: users.filter((user) => user.role === "admin").length,
@@ -367,6 +424,9 @@ export default function SuperAdminDashboard({
           <a href="#overview" className="shrink-0 rounded-xl bg-slate-900 px-3.5 py-2 font-medium text-white sm:px-4">
             Overview
           </a>
+          <a href="#payments" className="shrink-0 rounded-xl px-3 py-2 font-medium text-slate-600 hover:bg-slate-100 sm:px-4">
+            Payment Requests
+          </a>
           <a href="#create" className="shrink-0 rounded-xl px-3 py-2 font-medium text-slate-600 hover:bg-slate-100 sm:px-4">
             Create account
           </a>
@@ -394,6 +454,256 @@ export default function SuperAdminDashboard({
               <p className="mt-3 text-3xl font-semibold">{loading ? "—" : item.value}</p>
             </article>
           ))}
+        </section>
+
+        {/* Payments Section */}
+        <section id="payments" className="mt-5 overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
+          <div className="flex flex-col gap-3 border-b border-slate-200 p-5 sm:flex-row sm:items-center sm:justify-between sm:p-6">
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-100 text-emerald-800 text-sm font-bold">
+                  💳
+                </span>
+                <h2 className="text-lg font-bold text-slate-900">Student &amp; Alumni Payment Requests</h2>
+              </div>
+              <p className="mt-1 text-sm text-slate-500">
+                Complete list of alumni and students that made payment requests with amounts, date, time, and full form details.
+              </p>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2">
+              <div className="flex rounded-xl bg-slate-100 p-1 text-xs font-semibold">
+                <button
+                  type="button"
+                  onClick={() => setPaymentFilter("all")}
+                  className={`rounded-lg px-3 py-1.5 transition ${
+                    paymentFilter === "all" ? "bg-white text-slate-900 shadow-sm" : "text-slate-600 hover:text-slate-900"
+                  }`}
+                >
+                  All ({monitoring?.paymentRequests?.length ?? 0})
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPaymentFilter("paid")}
+                  className={`rounded-lg px-3 py-1.5 transition ${
+                    paymentFilter === "paid" ? "bg-emerald-600 text-white shadow-sm" : "text-slate-600 hover:text-slate-900"
+                  }`}
+                >
+                  Paid ({monitoring?.paymentRequests?.filter((r) => r.paymentStatus === "paid").length ?? 0})
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPaymentFilter("pending")}
+                  className={`rounded-lg px-3 py-1.5 transition ${
+                    paymentFilter === "pending" ? "bg-amber-600 text-white shadow-sm" : "text-slate-600 hover:text-slate-900"
+                  }`}
+                >
+                  Pending ({monitoring?.paymentRequests?.filter((r) => r.paymentStatus === "pending").length ?? 0})
+                </button>
+              </div>
+
+              <input
+                aria-label="Search alumni payment requests"
+                placeholder="Search student, matric, email, ref..."
+                value={paymentSearch}
+                onChange={(e) => setPaymentSearch(e.target.value)}
+                className="form-input text-xs sm:text-sm py-1.5 max-w-[240px]"
+              />
+            </div>
+          </div>
+
+          {/* Desktop Table View */}
+          <div className="hidden overflow-x-auto lg:block">
+            <table className="w-full text-left text-sm">
+              <thead className="bg-slate-50 text-xs font-bold uppercase tracking-wider text-slate-500">
+                <tr>
+                  <th className="px-5 py-3.5">Student / Alumni</th>
+                  <th className="px-5 py-3.5">Matric No.</th>
+                  <th className="px-5 py-3.5">Transcript Service</th>
+                  <th className="px-5 py-3.5">Amount</th>
+                  <th className="px-5 py-3.5">Payment Status</th>
+                  <th className="px-5 py-3.5">Date &amp; Time</th>
+                  <th className="px-5 py-3.5 text-center">View Form</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {filteredPaymentRequests.map((req) => {
+                  const dateObj = new Date(req.createdAt);
+                  const formattedDate = dateObj.toLocaleDateString("en-GB", {
+                    day: "2-digit",
+                    month: "short",
+                    year: "numeric",
+                  });
+                  const formattedTime = dateObj.toLocaleTimeString([], {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                    second: "2-digit",
+                  });
+
+                  return (
+                    <tr key={req.id} className="transition hover:bg-slate-50/70">
+                      <td className="px-5 py-4">
+                        <div className="font-semibold text-slate-900">{req.fullName}</div>
+                        <div className="text-xs text-slate-500">{req.email}</div>
+                        <div className="text-xs text-slate-400">{req.phoneNumber}</div>
+                      </td>
+                      <td className="px-5 py-4">
+                        <span className="font-mono text-xs font-semibold text-slate-800 bg-slate-100 px-2 py-0.5 rounded">
+                          {req.matriculationNumber}
+                        </span>
+                      </td>
+                      <td className="px-5 py-4">
+                        <div className="font-medium text-slate-800">
+                          {req.transcriptFormatLabel || req.transcriptFormat}
+                        </div>
+                        <div className="text-xs text-slate-500">
+                          {req.deliveryMethod === "dhl" ? (
+                            <span className="text-amber-700 font-medium">📦 Courier (DHL)</span>
+                          ) : (
+                            <span className="text-blue-700 font-medium">✉️ Electronic (Email)</span>
+                          )}
+                        </div>
+                      </td>
+                      <td className="px-5 py-4">
+                        <span className="font-bold text-slate-900">
+                          ₦{Number(req.amount).toLocaleString("en-NG")}
+                        </span>
+                      </td>
+                      <td className="px-5 py-4">
+                        <span
+                          className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold uppercase tracking-wider ${
+                            req.paymentStatus === "paid"
+                              ? "bg-emerald-100 text-emerald-800"
+                              : req.paymentStatus === "pending"
+                              ? "bg-amber-100 text-amber-800"
+                              : "bg-rose-100 text-rose-800"
+                          }`}
+                        >
+                          <span
+                            className={`h-1.5 w-1.5 rounded-full ${
+                              req.paymentStatus === "paid"
+                                ? "bg-emerald-600"
+                                : req.paymentStatus === "pending"
+                                ? "bg-amber-600"
+                                : "bg-rose-600"
+                            }`}
+                          />
+                          {req.paymentStatus}
+                        </span>
+                        {req.paymentReference && (
+                          <div className="mt-1 font-mono text-[10px] text-slate-400 truncate max-w-[140px]">
+                            {req.paymentReference}
+                          </div>
+                        )}
+                      </td>
+                      <td className="px-5 py-4 whitespace-nowrap text-xs text-slate-600">
+                        <div className="font-medium text-slate-900">{formattedDate}</div>
+                        <div className="text-slate-400">{formattedTime}</div>
+                      </td>
+                      <td className="px-5 py-4 text-center">
+                        <button
+                          type="button"
+                          onClick={() => setSelectedPaymentRequest(req)}
+                          title="View Full Student Form"
+                          className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-600 shadow-sm transition hover:border-[#173c5c] hover:bg-blue-50 hover:text-[#173c5c]"
+                        >
+                          {/* Toggle Eye Icon */}
+                          <svg
+                            className="h-5 w-5"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            strokeWidth="1.75"
+                            stroke="currentColor"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              d="M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178Z"
+                            />
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"
+                            />
+                          </svg>
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })}
+                {!filteredPaymentRequests.length && (
+                  <tr>
+                    <td colSpan={7} className="px-5 py-12 text-center text-slate-500">
+                      No payment requests found.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Mobile Card View */}
+          <div className="divide-y divide-slate-100 lg:hidden">
+            {filteredPaymentRequests.map((req) => {
+              const dateObj = new Date(req.createdAt);
+              const formattedDate = dateObj.toLocaleDateString("en-GB", {
+                day: "2-digit",
+                month: "short",
+                year: "numeric",
+              });
+              const formattedTime = dateObj.toLocaleTimeString([], {
+                hour: "2-digit",
+                minute: "2-digit",
+              });
+
+              return (
+                <div key={req.id} className="p-4 sm:p-5">
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <h3 className="font-bold text-slate-900">{req.fullName}</h3>
+                      <p className="text-xs text-slate-500">{req.email}</p>
+                      <p className="font-mono text-xs text-slate-700 mt-0.5">Matric: {req.matriculationNumber}</p>
+                    </div>
+                    <span
+                      className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-semibold uppercase ${
+                        req.paymentStatus === "paid"
+                          ? "bg-emerald-100 text-emerald-800"
+                          : req.paymentStatus === "pending"
+                          ? "bg-amber-100 text-amber-800"
+                          : "bg-rose-100 text-rose-800"
+                      }`}
+                    >
+                      {req.paymentStatus}
+                    </span>
+                  </div>
+
+                  <div className="mt-3 flex items-center justify-between border-t border-slate-100 pt-3 text-xs">
+                    <div>
+                      <span className="font-semibold text-slate-900 text-sm">
+                        ₦{Number(req.amount).toLocaleString("en-NG")}
+                      </span>
+                      <p className="text-[11px] text-slate-500">{formattedDate} · {formattedTime}</p>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => setSelectedPaymentRequest(req)}
+                      className="inline-flex items-center gap-1.5 rounded-xl border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50"
+                    >
+                      <svg className="h-4 w-4 text-slate-500" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178Z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
+                      </svg>
+                      View Form
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+            {!filteredPaymentRequests.length && (
+              <p className="p-6 text-center text-sm text-slate-500">No payment requests found.</p>
+            )}
+          </div>
         </section>
 
         <section id="create" className="mt-5 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
@@ -815,6 +1125,222 @@ export default function SuperAdminDashboard({
                 className="rounded-xl border border-slate-300 px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50"
               >
                 Close
+              </button>
+            </div>
+          </section>
+        </div>
+      )}
+      {/* Full Transcript Application Form Detail Modal with Eye View */}
+      {selectedPaymentRequest && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 p-4 sm:p-6 backdrop-blur-sm animate-in fade-in duration-200"
+          onClick={(event) => {
+            if (event.target === event.currentTarget) setSelectedPaymentRequest(null);
+          }}
+        >
+          <section
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="student-form-modal-title"
+            className="relative w-full max-w-3xl max-h-[90vh] overflow-y-auto rounded-3xl border border-slate-200 bg-white p-6 sm:p-8 shadow-2xl"
+          >
+            {/* Modal Header */}
+            <div className="flex items-start justify-between border-b border-slate-100 pb-4">
+              <div>
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-blue-50 px-3 py-1 text-xs font-bold text-blue-700 uppercase tracking-wider mb-2">
+                  <span>📄</span> Application Details · Request #{selectedPaymentRequest.id}
+                </span>
+                <h3 id="student-form-modal-title" className="text-xl sm:text-2xl font-bold text-slate-900">
+                  {selectedPaymentRequest.fullName}
+                </h3>
+                <p className="text-xs sm:text-sm text-slate-500 mt-0.5">
+                  Matriculation No: <span className="font-mono font-bold text-slate-800">{selectedPaymentRequest.matriculationNumber}</span>
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setSelectedPaymentRequest(null)}
+                className="flex h-9 w-9 items-center justify-center rounded-full text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
+                aria-label="Close dialog"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div className="mt-6 space-y-6">
+              {/* Payment Status Banner */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-2xl bg-slate-50 border border-slate-200/80 p-4">
+                <div>
+                  <span className="text-xs uppercase tracking-wider text-slate-500 font-semibold">Payment Status</span>
+                  <div className="flex items-center gap-2 mt-1">
+                    <span
+                      className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold uppercase tracking-wider ${
+                        selectedPaymentRequest.paymentStatus === "paid"
+                          ? "bg-emerald-100 text-emerald-800"
+                          : selectedPaymentRequest.paymentStatus === "pending"
+                          ? "bg-amber-100 text-amber-800"
+                          : "bg-rose-100 text-rose-800"
+                      }`}
+                    >
+                      <span
+                        className={`h-2 w-2 rounded-full ${
+                          selectedPaymentRequest.paymentStatus === "paid"
+                            ? "bg-emerald-600"
+                            : selectedPaymentRequest.paymentStatus === "pending"
+                            ? "bg-amber-600"
+                            : "bg-rose-600"
+                        }`}
+                      />
+                      {selectedPaymentRequest.paymentStatus}
+                    </span>
+                    <span className="text-base sm:text-lg font-bold text-slate-900">
+                      ₦{Number(selectedPaymentRequest.amount).toLocaleString("en-NG")}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="text-xs text-slate-500 sm:text-right">
+                  <div>
+                    <strong>Date &amp; Time:</strong>{" "}
+                    {new Date(selectedPaymentRequest.createdAt).toLocaleString("en-GB", {
+                      day: "2-digit",
+                      month: "short",
+                      year: "numeric",
+                      hour: "2-digit",
+                      minute: "2-digit",
+                      second: "2-digit",
+                    })}
+                  </div>
+                  {selectedPaymentRequest.paymentReference && (
+                    <div className="font-mono text-slate-700 mt-1">
+                      <strong>Reference:</strong> {selectedPaymentRequest.paymentReference}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* 01: Student & Academic Details */}
+              <div className="rounded-2xl border border-slate-200 p-5">
+                <h4 className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-slate-500 border-b border-slate-100 pb-2 mb-4">
+                  <span className="flex h-5 w-5 items-center justify-center rounded-full bg-slate-900 text-[10px] text-white">1</span>
+                  Student &amp; Academic Details
+                </h4>
+
+                <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3 text-xs sm:text-sm">
+                  <div>
+                    <span className="text-slate-500 block text-xs">First Name</span>
+                    <span className="font-semibold text-slate-900">{selectedPaymentRequest.firstName}</span>
+                  </div>
+                  <div>
+                    <span className="text-slate-500 block text-xs">Other Name</span>
+                    <span className="font-semibold text-slate-900">{selectedPaymentRequest.otherName || "—"}</span>
+                  </div>
+                  <div>
+                    <span className="text-slate-500 block text-xs">Surname</span>
+                    <span className="font-semibold text-slate-900">{selectedPaymentRequest.surname}</span>
+                  </div>
+                  <div>
+                    <span className="text-slate-500 block text-xs">Phone Number</span>
+                    <span className="font-semibold text-slate-900">{selectedPaymentRequest.phoneNumber}</span>
+                  </div>
+                  <div>
+                    <span className="text-slate-500 block text-xs">Email Address</span>
+                    <span className="font-semibold text-slate-900">{selectedPaymentRequest.email}</span>
+                  </div>
+                  <div>
+                    <span className="text-slate-500 block text-xs">Campus</span>
+                    <span className="font-semibold text-slate-900">{selectedPaymentRequest.campus}</span>
+                  </div>
+                  <div>
+                    <span className="text-slate-500 block text-xs">Mode of Admission</span>
+                    <span className="font-semibold text-slate-900">{selectedPaymentRequest.modeOfAdmission}</span>
+                  </div>
+                  <div>
+                    <span className="text-slate-500 block text-xs">Level of Study</span>
+                    <span className="font-semibold text-slate-900">{selectedPaymentRequest.levelOfStudy}</span>
+                  </div>
+                  <div>
+                    <span className="text-slate-500 block text-xs">Document Type</span>
+                    <span className="font-semibold text-slate-900">{selectedPaymentRequest.documentType}</span>
+                  </div>
+                  <div>
+                    <span className="text-slate-500 block text-xs">Graduation Period</span>
+                    <span className="font-semibold text-slate-900">
+                      {selectedPaymentRequest.monthOfGraduation} {selectedPaymentRequest.yearOfGraduation}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* 02: Delivery & Destination Details */}
+              <div className="rounded-2xl border border-slate-200 p-5">
+                <h4 className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-slate-500 border-b border-slate-100 pb-2 mb-4">
+                  <span className="flex h-5 w-5 items-center justify-center rounded-full bg-slate-900 text-[10px] text-white">2</span>
+                  Delivery &amp; Destination Details
+                </h4>
+
+                <div className="grid gap-4 sm:grid-cols-2 text-xs sm:text-sm">
+                  <div>
+                    <span className="text-slate-500 block text-xs">Recipient Institution / Organization</span>
+                    <span className="font-semibold text-slate-900">{selectedPaymentRequest.recipientInstitution}</span>
+                  </div>
+                  <div>
+                    <span className="text-slate-500 block text-xs">Receiver Email</span>
+                    <span className="font-semibold text-slate-900">{selectedPaymentRequest.receiverEmail}</span>
+                  </div>
+                  <div className="sm:col-span-2">
+                    <span className="text-slate-500 block text-xs">Recipient Address</span>
+                    <span className="font-semibold text-slate-900">{selectedPaymentRequest.recipientAddress}</span>
+                  </div>
+                  <div>
+                    <span className="text-slate-500 block text-xs">Delivery Method</span>
+                    <span className="font-semibold text-slate-900">
+                      {selectedPaymentRequest.deliveryMethod === "dhl" ? "DHL Courier (Physical)" : "Email (Electronic)"}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-slate-500 block text-xs">Reference Number</span>
+                    <span className="font-semibold text-slate-900">{selectedPaymentRequest.referenceNumber || "NILL"}</span>
+                  </div>
+
+                  {selectedPaymentRequest.deliveryMethod === "dhl" && (
+                    <>
+                      <div>
+                        <span className="text-slate-500 block text-xs">Destination Country</span>
+                        <span className="font-semibold text-slate-900">
+                          {selectedPaymentRequest.dhlCountry} ({selectedPaymentRequest.dhlCountryCode})
+                        </span>
+                      </div>
+                      <div>
+                        <span className="text-slate-500 block text-xs">State / Region</span>
+                        <span className="font-semibold text-slate-900">{selectedPaymentRequest.dhlState}</span>
+                      </div>
+                      <div>
+                        <span className="text-slate-500 block text-xs">Continent</span>
+                        <span className="font-semibold text-slate-900">{selectedPaymentRequest.dhlContinent}</span>
+                      </div>
+                      <div>
+                        <span className="text-slate-500 block text-xs">Courier Fee</span>
+                        <span className="font-semibold text-slate-900">
+                          ₦{((selectedPaymentRequest.dhlDeliveryPriceKobo ?? 0) / 100).toLocaleString("en-NG")}
+                        </span>
+                      </div>
+                    </>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Modal Footer */}
+            <div className="mt-6 flex justify-end border-t border-slate-100 pt-4">
+              <button
+                type="button"
+                onClick={() => setSelectedPaymentRequest(null)}
+                className="rounded-xl bg-slate-900 px-5 py-2.5 text-xs sm:text-sm font-semibold text-white shadow transition hover:bg-slate-800"
+              >
+                Close Details
               </button>
             </div>
           </section>

@@ -107,13 +107,54 @@ export async function POST(request: Request) {
       ];
     }
 
-    // 3. If user is logged in, fetch their recent request status from database
+    // 3. If user is logged in, fetch their recent requests from database; otherwise check if message mentions an ID or matric number
     let userRequestsContext = "";
+    let specificFoundRequest: any = null;
+
+    // Check if the user mentioned a specific request ID (e.g. #24, request 15, ID 32)
+    const requestIdMatch = message.match(/(?:request\s*(?:id|#)?|#|order\s*(?:id|#)?|application\s*(?:id|#)?)\s*(\d{1,8})\b/i);
+    // Check if user mentioned a matriculation number (e.g. 2017/245323 or PG/...)
+    const matricMatch = message.match(/\b(\d{4}\/\d{5,7})\b/i) || message.match(/\b((?:PG|PH\.?D|M\.?SC|M\.?ED|M\.?ENG|MBA|LLM|MA|MPA|MLS|MPH)\/[A-Z0-9.\-_/]+)\b/i);
+
+    if (requestIdMatch) {
+      try {
+        const found = await sql`
+          SELECT id, campus, transcript_format AS "format", status, payment_status AS "paymentStatus",
+                 matriculation_number AS "matricNumber", recipient_institution AS "recipient",
+                 delivery_method AS "deliveryMethod", dhl_state AS "dhlState", dhl_country AS "dhlCountry",
+                 created_at AS "createdAt", payment_reference AS "paymentRef"
+          FROM transcript_requests
+          WHERE id = ${requestIdMatch[1]}
+          LIMIT 1
+        `;
+        if (found.length > 0) {
+          specificFoundRequest = found[0];
+        }
+      } catch {}
+    } else if (matricMatch) {
+      try {
+        const found = await sql`
+          SELECT id, campus, transcript_format AS "format", status, payment_status AS "paymentStatus",
+                 matriculation_number AS "matricNumber", recipient_institution AS "recipient",
+                 delivery_method AS "deliveryMethod", dhl_state AS "dhlState", dhl_country AS "dhlCountry",
+                 created_at AS "createdAt", payment_reference AS "paymentRef"
+          FROM transcript_requests
+          WHERE LOWER(matriculation_number) = LOWER(${matricMatch[1]})
+          ORDER BY created_at DESC
+          LIMIT 1
+        `;
+        if (found.length > 0) {
+          specificFoundRequest = found[0];
+        }
+      } catch {}
+    }
+
     if (user?.id) {
       try {
         const userRecentRequests = await sql`
           SELECT id, campus, transcript_format AS "format", status, payment_status AS "paymentStatus",
-                 matriculation_number AS "matricNumber", created_at AS "createdAt"
+                 matriculation_number AS "matricNumber", recipient_institution AS "recipient",
+                 created_at AS "createdAt"
           FROM transcript_requests
           WHERE user_id = ${user.id}
           ORDER BY created_at DESC
@@ -244,7 +285,27 @@ Rules:
 
     // Comprehensive database-backed rule engine fallback if AI service key is absent or unreachable
     if (!finalAnswer) {
-      if (lower.includes("dhl") || lower.includes("courier") || lower.includes("shipping") || lower.includes("delivery cost") || lower.includes("delivery rate") || lower.includes("postage")) {
+      if (specificFoundRequest) {
+        const reqDate = new Date(specificFoundRequest.createdAt).toLocaleDateString("en-GB", {
+          day: "2-digit",
+          month: "short",
+          year: "numeric",
+        });
+        const deliveryInfo = specificFoundRequest.deliveryMethod === "dhl"
+          ? `DHL Courier (${specificFoundRequest.dhlState || ""}, ${specificFoundRequest.dhlCountry || ""})`
+          : "Electronic Softcopy (Email transmission)";
+
+        finalAnswer = `Here are the official records found for Request #${specificFoundRequest.id}:\n\n` +
+          `• Matriculation Number: ${specificFoundRequest.matricNumber}\n` +
+          `• Campus: ${specificFoundRequest.campus}\n` +
+          `• Transcript Service: ${specificFoundRequest.format}\n` +
+          `• Recipient Institution: ${specificFoundRequest.recipient}\n` +
+          `• Delivery Channel: ${deliveryInfo}\n` +
+          `• Payment Status: ${specificFoundRequest.paymentStatus.toUpperCase()}${specificFoundRequest.paymentRef ? ` (Ref: ${specificFoundRequest.paymentRef})` : ""}\n` +
+          `• Processing Status: ${specificFoundRequest.status.toUpperCase()}\n` +
+          `• Submitted Date: ${reqDate}\n\n` +
+          `Official academic records processing takes two weeks+ (14 to 21 working days). If you need to update destination details or follow up further, please provide any additional details.`;
+      } else if (lower.includes("dhl") || lower.includes("courier") || lower.includes("shipping") || lower.includes("delivery cost") || lower.includes("delivery rate") || lower.includes("postage")) {
         finalAnswer = `Hardcopy transcript delivery is handled securely via DHL courier. Delivery rates are calculated based on your destination country and state:\n\n${sampleDhlText}\n\n• For destinations within Nigeria: Rates are mapped directly from our database.\n• For deliveries outside Nigeria: Rates correspond to DHL international zone tariffs. You can select your country and state directly in the DHL delivery popup modal on the request form.`;
       } else if (lower.includes("price") || lower.includes("cost") || lower.includes("how much") || lower.includes("fee") || lower.includes("amount") || lower.includes("services") || lower.includes("tariff") || lower.includes("rates")) {
         finalAnswer = `Here are the official fees and services configured in our database:\n\n${servicesList}\n\nYou can select any of these directly on the Request page (/request).`;
@@ -252,7 +313,7 @@ Rules:
         if (userRequestsContext) {
           finalAnswer = `Here is your recent request information from our database:\n${userRequestsContext}\n\nYou can view your live processing status anytime under 'My Dashboard'.`;
         } else {
-          finalAnswer = "You can track the live progress of your transcript or document request in your dashboard under 'Track Request' or 'My Dashboard'. If you submitted as a guest, your status updates and delivery tracking are also delivered directly to your email address.";
+          finalAnswer = "You can track the live progress of your transcript or document request in your dashboard under 'Track Request' or 'My Dashboard'. If you have a specific Request ID or Matriculation Number, simply type it here (e.g. 'Status of #25' or 'Check 2017/245323') and I will look up your application details immediately.";
         }
       } else if (lower.includes("matric") || lower.includes("matriculation") || lower.includes("number format")) {
         finalAnswer = "For matriculation numbers:\n• Undergraduate format: 4-digit enrollment year followed by student serial digits, e.g. 2017/245323.\n• Postgraduate format: Starts with degree code, e.g. PG/M.SC/../...... or Ph.D/.../.....\n\nPlease ensure you enter it without spaces according to your study level.";
@@ -274,7 +335,8 @@ Rules:
         finalAnswer = `Welcome to TranscriptPoint Support! We provide end-to-end academic transcript processing, English proficiency certificates, and DHL delivery across all accredited campuses.\n\n` +
           `• Document Processing Timeline: Standard processing is ready in two weeks+ (14 to 21 working days).\n` +
           `• Services Available: Official Softcopy, Hardcopy via DHL, English Proficiency, and Verification.\n` +
-          `• To start a request: Visit our New Request page (/request) or the request form modal on the home page.\n\n` +
+          `• Real-time Lookup: Type your Request ID (e.g. #24) or Matric Number anytime to check status instantly.\n` +
+          `• To start a request: Visit our New Request page (/request) or the request form on the home page.\n\n` +
           `Feel free to ask about specific fees, DHL shipping rates, tracking, or campus requirements. How may we assist you today?`;
       }
     }

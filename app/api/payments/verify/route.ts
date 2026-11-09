@@ -53,7 +53,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "A valid request ID and payment reference are required" }, { status: 400 });
   }
 
-  const paystackSecret = process.env.PAYSTACK_SECRET_KEY;
+  const paystackSecret = process.env.PAYSTACK_SECRET_KEY || process.env.PAYSTACK_LIVE_SECRET_KEY;
   const resendApiKey = process.env.RESEND_API_KEY;
   const emailFrom = process.env.EMAIL_FROM;
   if (!paystackSecret) {

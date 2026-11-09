@@ -354,8 +354,8 @@ export default function SuperAdminDashboard({
           { label: "User Directory", href: "/admin/users" },
         ]}
       />
-      <main className="flex-1 px-3 py-4 sm:px-6 sm:py-6 lg:px-8">
-        <div className="mx-auto max-w-[1500px] space-y-5">
+      <main className="flex-1 px-4 py-6 sm:px-8">
+        <div className="mx-auto max-w-7xl space-y-6">
           {/* System control Header with Profile Picture */}
         <header className="flex flex-col gap-4 rounded-2xl sm:rounded-3xl bg-slate-950 p-4 sm:p-6 lg:p-8 text-white shadow-xl sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-3 sm:gap-4">
@@ -524,17 +524,17 @@ export default function SuperAdminDashboard({
           </div>
 
           {/* Desktop Table View */}
-          <div className="hidden overflow-x-auto lg:block">
-            <table className="w-full text-left text-sm">
+          <div className="hidden lg:block overflow-x-auto">
+            <table className="w-full text-left text-sm table-auto">
               <thead className="bg-slate-50 text-xs font-bold uppercase tracking-wider text-slate-500">
                 <tr>
-                  <th className="px-5 py-3.5">Student / Alumni</th>
-                  <th className="px-5 py-3.5">Matric No.</th>
-                  <th className="px-5 py-3.5">Transcript Service</th>
-                  <th className="px-5 py-3.5">Amount</th>
-                  <th className="px-5 py-3.5">Payment Status</th>
-                  <th className="px-5 py-3.5">Date &amp; Time</th>
-                  <th className="px-5 py-3.5 text-center">View Form</th>
+                  <th className="px-4 py-3.5">Student / Alumni</th>
+                  <th className="px-3 py-3.5">Matric No.</th>
+                  <th className="px-4 py-3.5">Transcript Service</th>
+                  <th className="px-3 py-3.5">Amount</th>
+                  <th className="px-3 py-3.5">Payment Status</th>
+                  <th className="px-3 py-3.5">Date &amp; Time</th>
+                  <th className="px-3 py-3.5 text-center">View</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
@@ -553,21 +553,21 @@ export default function SuperAdminDashboard({
 
                   return (
                     <tr key={req.id} className="transition hover:bg-slate-50/70">
-                      <td className="px-5 py-4">
-                        <div className="font-semibold text-slate-900">{req.fullName}</div>
+                      <td className="px-4 py-3.5">
+                        <div className="font-semibold text-slate-900 leading-tight">{req.fullName}</div>
                         <div className="text-xs text-slate-500">{req.email}</div>
                         <div className="text-xs text-slate-400">{req.phoneNumber}</div>
                       </td>
-                      <td className="px-5 py-4">
+                      <td className="px-3 py-3.5 whitespace-nowrap">
                         <span className="font-mono text-xs font-semibold text-slate-800 bg-slate-100 px-2 py-0.5 rounded">
                           {req.matriculationNumber}
                         </span>
                       </td>
-                      <td className="px-5 py-4">
-                        <div className="font-medium text-slate-800">
+                      <td className="px-4 py-3.5">
+                        <div className="font-medium text-slate-800 leading-snug">
                           {req.transcriptFormatLabel || req.transcriptFormat}
                         </div>
-                        <div className="text-xs text-slate-500">
+                        <div className="text-xs text-slate-500 mt-0.5">
                           {req.deliveryMethod === "dhl" ? (
                             <span className="text-amber-700 font-medium">📦 Courier (DHL)</span>
                           ) : (
@@ -575,14 +575,14 @@ export default function SuperAdminDashboard({
                           )}
                         </div>
                       </td>
-                      <td className="px-5 py-4">
+                      <td className="px-3 py-3.5 whitespace-nowrap">
                         <span className="font-bold text-slate-900">
                           ₦{Number(req.amount).toLocaleString("en-NG")}
                         </span>
                       </td>
-                      <td className="px-5 py-4">
+                      <td className="px-3 py-3.5 whitespace-nowrap">
                         <span
-                          className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold uppercase tracking-wider ${
+                          className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-semibold uppercase tracking-wider ${
                             req.paymentStatus === "paid"
                               ? "bg-emerald-100 text-emerald-800"
                               : req.paymentStatus === "pending"
@@ -602,25 +602,25 @@ export default function SuperAdminDashboard({
                           {req.paymentStatus}
                         </span>
                         {req.paymentReference && (
-                          <div className="mt-1 font-mono text-[10px] text-slate-400 truncate max-w-[140px]">
+                          <div className="mt-0.5 font-mono text-[10px] text-slate-400 truncate max-w-[120px]">
                             {req.paymentReference}
                           </div>
                         )}
                       </td>
-                      <td className="px-5 py-4 whitespace-nowrap text-xs text-slate-600">
+                      <td className="px-3 py-3.5 whitespace-nowrap text-xs text-slate-600">
                         <div className="font-medium text-slate-900">{formattedDate}</div>
-                        <div className="text-slate-400">{formattedTime}</div>
+                        <div className="text-slate-400 text-[11px]">{formattedTime}</div>
                       </td>
-                      <td className="px-5 py-4 text-center">
+                      <td className="px-3 py-3.5 text-center whitespace-nowrap">
                         <button
                           type="button"
                           onClick={() => setSelectedPaymentRequest(req)}
                           title="View Full Student Form"
-                          className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-600 shadow-sm transition hover:border-[#173c5c] hover:bg-blue-50 hover:text-[#173c5c]"
+                          className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 shadow-sm transition hover:border-[#173c5c] hover:bg-blue-50 hover:text-[#173c5c]"
                         >
                           {/* Toggle Eye Icon */}
                           <svg
-                            className="h-5 w-5"
+                            className="h-4 w-4"
                             fill="none"
                             viewBox="0 0 24 24"
                             strokeWidth="1.75"

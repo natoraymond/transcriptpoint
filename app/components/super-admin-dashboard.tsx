@@ -354,10 +354,10 @@ export default function SuperAdminDashboard({
           { label: "User Directory", href: "/admin/users" },
         ]}
       />
-      <main className="flex-1 px-4 py-6 sm:px-8">
-        <div className="mx-auto max-w-[1500px]">
+      <main className="flex-1 px-3 py-4 sm:px-6 sm:py-6 lg:px-8">
+        <div className="mx-auto max-w-[1500px] space-y-5">
           {/* System control Header with Profile Picture */}
-        <header className="flex flex-col gap-5 rounded-3xl bg-slate-950 p-5 text-white shadow-xl sm:flex-row sm:items-center sm:justify-between sm:p-8">
+        <header className="flex flex-col gap-4 rounded-2xl sm:rounded-3xl bg-slate-950 p-4 sm:p-6 lg:p-8 text-white shadow-xl sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-3 sm:gap-4">
             <button
               type="button"
@@ -367,16 +367,16 @@ export default function SuperAdminDashboard({
                 setAvatarError("");
                 setIsAvatarModalOpen(true);
               }}
-              className="group relative flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-2xl border-2 border-cyan-400/40 bg-slate-900 shadow-lg transition hover:scale-105 hover:border-cyan-400 sm:h-16 sm:w-16"
+              className="group relative flex h-12 w-12 sm:h-16 sm:w-16 shrink-0 items-center justify-center overflow-hidden rounded-2xl border-2 border-cyan-400/40 bg-slate-900 shadow-lg transition hover:scale-105 hover:border-cyan-400"
               title="Click to upload/change Super Admin profile picture"
             >
               {avatarUrl ? (
                 <img src={avatarUrl} alt={fullName} className="h-full w-full object-cover" />
               ) : (
-                <span className="text-lg font-bold text-white sm:text-xl">{initials}</span>
+                <span className="text-base font-bold text-white sm:text-xl">{initials}</span>
               )}
               <div className="absolute inset-0 flex items-center justify-center bg-black/55 opacity-0 transition group-hover:opacity-100">
-                <svg viewBox="0 0 24 24" fill="none" className="h-6 w-6 stroke-current text-white" strokeWidth="2">
+                <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5 sm:h-6 sm:w-6 stroke-current text-white" strokeWidth="2">
                   <path
                     strokeLinecap="round"
                     strokeLinejoin="round"
@@ -387,15 +387,15 @@ export default function SuperAdminDashboard({
               </div>
             </button>
             <div className="min-w-0">
-              <p className="text-xs font-semibold uppercase tracking-[.2em] text-cyan-300">System control</p>
-              <h1 className="mt-0.5 text-xl font-bold tracking-tight sm:text-3xl">Super Admin</h1>
+              <p className="text-[10px] sm:text-xs font-semibold uppercase tracking-[.2em] text-cyan-300">System control</p>
+              <h1 className="mt-0.5 text-lg sm:text-2xl lg:text-3xl font-bold tracking-tight">Super Admin</h1>
               <p className="mt-0.5 truncate text-xs text-slate-300">
                 {fullName} {userEmail ? `· ${userEmail}` : ""}
               </p>
             </div>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2.5 sm:gap-3">
+          <div className="flex flex-wrap items-center gap-2 sm:gap-3">
             <button
               type="button"
               onClick={() => {
@@ -420,8 +420,8 @@ export default function SuperAdminDashboard({
           </div>
         </header>
 
-        <nav className="mt-4 flex gap-1.5 overflow-x-auto rounded-2xl border border-slate-200 bg-white p-2 text-xs sm:gap-2 sm:text-sm">
-          <a href="#overview" className="shrink-0 rounded-xl bg-slate-900 px-3.5 py-2 font-medium text-white sm:px-4">
+        <nav className="flex gap-1.5 overflow-x-auto rounded-2xl border border-slate-200 bg-white p-2 text-xs sm:gap-2 sm:text-sm scrollbar-none">
+          <a href="#overview" className="shrink-0 rounded-xl bg-slate-900 px-3 py-2 font-medium text-white sm:px-4">
             Overview
           </a>
           <a href="#payments" className="shrink-0 rounded-xl px-3 py-2 font-medium text-slate-600 hover:bg-slate-100 sm:px-4">
@@ -444,39 +444,39 @@ export default function SuperAdminDashboard({
           </a>
         </nav>
 
-        {error && <p role="alert" className="mt-4 rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700">{error}</p>}
-        {notice && <p role="status" className="mt-4 rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-800">{notice}</p>}
+        {error && <p role="alert" className="rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700">{error}</p>}
+        {notice && <p role="status" className="rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-800">{notice}</p>}
 
-        <section id="overview" className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <section id="overview" className="grid gap-3 sm:gap-4 grid-cols-2 lg:grid-cols-4">
           {overviewCards.map((item) => (
-            <article key={item.title} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-              <p className="text-sm text-slate-500">{item.title}</p>
-              <p className="mt-3 text-3xl font-semibold">{loading ? "—" : item.value}</p>
+            <article key={item.title} className="rounded-2xl border border-slate-200 bg-white p-4 sm:p-5 shadow-sm">
+              <p className="text-xs sm:text-sm text-slate-500 font-medium">{item.title}</p>
+              <p className="mt-2 sm:mt-3 text-2xl sm:text-3xl font-bold tracking-tight">{loading ? "—" : item.value}</p>
             </article>
           ))}
         </section>
 
         {/* Payments Section */}
-        <section id="payments" className="mt-5 overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
-          <div className="flex flex-col gap-3 border-b border-slate-200 p-5 sm:flex-row sm:items-center sm:justify-between sm:p-6">
+        <section id="payments" className="rounded-2xl sm:rounded-3xl border border-slate-200 bg-white shadow-sm overflow-hidden">
+          <div className="flex flex-col gap-3.5 border-b border-slate-200 p-4 sm:p-6 lg:flex-row lg:items-center lg:justify-between">
             <div>
               <div className="flex items-center gap-2">
                 <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-100 text-emerald-800 text-sm font-bold">
                   💳
                 </span>
-                <h2 className="text-lg font-bold text-slate-900">Student &amp; Alumni Payment Requests</h2>
+                <h2 className="text-base sm:text-lg font-bold text-slate-900">Student &amp; Alumni Payment Requests</h2>
               </div>
-              <p className="mt-1 text-sm text-slate-500">
+              <p className="mt-1 text-xs sm:text-sm text-slate-500">
                 Complete list of alumni and students that made payment requests with amounts, date, time, and full form details.
               </p>
             </div>
 
-            <div className="flex flex-wrap items-center gap-2">
-              <div className="flex rounded-xl bg-slate-100 p-1 text-xs font-semibold">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-2.5 w-full lg:w-auto">
+              <div className="flex w-full sm:w-auto overflow-x-auto rounded-xl bg-slate-100 p-1 text-xs font-semibold scrollbar-none">
                 <button
                   type="button"
                   onClick={() => setPaymentFilter("all")}
-                  className={`rounded-lg px-3 py-1.5 transition ${
+                  className={`flex-1 sm:flex-initial text-center rounded-lg px-2.5 sm:px-3 py-1.5 transition whitespace-nowrap ${
                     paymentFilter === "all" ? "bg-white text-slate-900 shadow-sm" : "text-slate-600 hover:text-slate-900"
                   }`}
                 >
@@ -485,7 +485,7 @@ export default function SuperAdminDashboard({
                 <button
                   type="button"
                   onClick={() => setPaymentFilter("paid")}
-                  className={`rounded-lg px-3 py-1.5 transition ${
+                  className={`flex-1 sm:flex-initial text-center rounded-lg px-2.5 sm:px-3 py-1.5 transition whitespace-nowrap ${
                     paymentFilter === "paid" ? "bg-emerald-600 text-white shadow-sm" : "text-slate-600 hover:text-slate-900"
                   }`}
                 >
@@ -494,7 +494,7 @@ export default function SuperAdminDashboard({
                 <button
                   type="button"
                   onClick={() => setPaymentFilter("pending")}
-                  className={`rounded-lg px-3 py-1.5 transition ${
+                  className={`flex-1 sm:flex-initial text-center rounded-lg px-2.5 sm:px-3 py-1.5 transition whitespace-nowrap ${
                     paymentFilter === "pending" ? "bg-amber-600 text-white shadow-sm" : "text-slate-600 hover:text-slate-900"
                   }`}
                 >
@@ -502,13 +502,24 @@ export default function SuperAdminDashboard({
                 </button>
               </div>
 
-              <input
-                aria-label="Search alumni payment requests"
-                placeholder="Search student, matric, email, ref..."
-                value={paymentSearch}
-                onChange={(e) => setPaymentSearch(e.target.value)}
-                className="form-input text-xs sm:text-sm py-1.5 max-w-[240px]"
-              />
+              <div className="relative w-full sm:w-64">
+                <input
+                  aria-label="Search alumni payment requests"
+                  placeholder="Search student, matric, email..."
+                  value={paymentSearch}
+                  onChange={(e) => setPaymentSearch(e.target.value)}
+                  className="form-input text-xs sm:text-sm py-2 sm:py-1.5 w-full pr-8"
+                />
+                {paymentSearch && (
+                  <button
+                    type="button"
+                    onClick={() => setPaymentSearch("")}
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 text-xs"
+                  >
+                    ✕
+                  </button>
+                )}
+              </div>
             </div>
           </div>
 
@@ -657,15 +668,26 @@ export default function SuperAdminDashboard({
               });
 
               return (
-                <div key={req.id} className="p-4 sm:p-5">
-                  <div className="flex items-start justify-between gap-3">
-                    <div>
-                      <h3 className="font-bold text-slate-900">{req.fullName}</h3>
-                      <p className="text-xs text-slate-500">{req.email}</p>
-                      <p className="font-mono text-xs text-slate-700 mt-0.5">Matric: {req.matriculationNumber}</p>
+                <div key={req.id} className="p-3.5 sm:p-5 transition hover:bg-slate-50/50">
+                  <div className="flex items-start justify-between gap-2.5">
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2">
+                        <h3 className="font-bold text-slate-900 text-sm sm:text-base truncate">{req.fullName}</h3>
+                      </div>
+                      <p className="text-xs text-slate-500 truncate">{req.email}</p>
+                      <div className="flex flex-wrap items-center gap-1.5 mt-1">
+                        <span className="font-mono text-[11px] font-semibold text-slate-700 bg-slate-100 px-2 py-0.5 rounded">
+                          {req.matriculationNumber}
+                        </span>
+                        <span className="text-[11px] text-slate-500">·</span>
+                        <span className="text-[11px] text-slate-600 truncate max-w-[160px] sm:max-w-none">
+                          {req.transcriptFormatLabel || req.transcriptFormat}
+                        </span>
+                      </div>
                     </div>
+
                     <span
-                      className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-semibold uppercase ${
+                      className={`inline-flex shrink-0 items-center gap-1 rounded-full px-2 sm:px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-wider ${
                         req.paymentStatus === "paid"
                           ? "bg-emerald-100 text-emerald-800"
                           : req.paymentStatus === "pending"
@@ -673,28 +695,39 @@ export default function SuperAdminDashboard({
                           : "bg-rose-100 text-rose-800"
                       }`}
                     >
+                      <span
+                        className={`h-1.5 w-1.5 rounded-full ${
+                          req.paymentStatus === "paid"
+                            ? "bg-emerald-600"
+                            : req.paymentStatus === "pending"
+                            ? "bg-amber-600"
+                            : "bg-rose-600"
+                        }`}
+                      />
                       {req.paymentStatus}
                     </span>
                   </div>
 
-                  <div className="mt-3 flex items-center justify-between border-t border-slate-100 pt-3 text-xs">
+                  <div className="mt-3 flex items-center justify-between border-t border-slate-100 pt-2.5 text-xs">
                     <div>
-                      <span className="font-semibold text-slate-900 text-sm">
+                      <span className="font-bold text-slate-900 text-sm">
                         ₦{Number(req.amount).toLocaleString("en-NG")}
                       </span>
-                      <p className="text-[11px] text-slate-500">{formattedDate} · {formattedTime}</p>
+                      <p className="text-[10px] sm:text-[11px] text-slate-500">
+                        {formattedDate} · {formattedTime}
+                      </p>
                     </div>
 
                     <button
                       type="button"
                       onClick={() => setSelectedPaymentRequest(req)}
-                      className="inline-flex items-center gap-1.5 rounded-xl border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50"
+                      className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-[#173c5c] shadow-sm transition hover:bg-blue-50 hover:border-[#173c5c]"
                     >
-                      <svg className="h-4 w-4 text-slate-500" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
+                      <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178Z" />
                         <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
                       </svg>
-                      View Form
+                      <span>View Form</span>
                     </button>
                   </div>
                 </div>
@@ -706,27 +739,27 @@ export default function SuperAdminDashboard({
           </div>
         </section>
 
-        <section id="create" className="mt-5 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
+        <section id="create" className="rounded-2xl sm:rounded-3xl border border-slate-200 bg-white p-4 sm:p-6 lg:p-8 shadow-sm">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[.16em] text-blue-700">Provision access</p>
-            <h2 className="mt-2 text-xl font-semibold">Create a user or administrator</h2>
-            <p className="mt-1 text-sm text-slate-500">
+            <p className="text-[11px] sm:text-xs font-semibold uppercase tracking-[.16em] text-blue-700">Provision access</p>
+            <h2 className="mt-1 sm:mt-2 text-lg sm:text-xl font-bold text-slate-900">Create a user or administrator</h2>
+            <p className="mt-1 text-xs sm:text-sm text-slate-500">
               Provide an initial password for immediate sign-in, or leave blank to send an email invitation.
             </p>
           </div>
-          <form onSubmit={createAccount} className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-            <label className="text-sm font-medium">
+          <form onSubmit={createAccount} className="mt-4 sm:mt-6 grid gap-3 sm:gap-4 sm:grid-cols-2 xl:grid-cols-4">
+            <label className="text-xs sm:text-sm font-medium text-slate-700">
               Full name
-              <input className="form-input mt-2" value={name} onChange={(event) => setName(event.target.value)} maxLength={120} required />
+              <input className="form-input mt-1.5 w-full text-xs sm:text-sm" value={name} onChange={(event) => setName(event.target.value)} maxLength={120} required />
             </label>
-            <label className="text-sm font-medium">
+            <label className="text-xs sm:text-sm font-medium text-slate-700">
               Email
-              <input className="form-input mt-2" type="email" value={email} onChange={(event) => setEmail(event.target.value)} required />
+              <input className="form-input mt-1.5 w-full text-xs sm:text-sm" type="email" value={email} onChange={(event) => setEmail(event.target.value)} required />
             </label>
-            <label className="text-sm font-medium">
+            <label className="text-xs sm:text-sm font-medium text-slate-700">
               Password (optional, min 9 chars)
               <input
-                className="form-input mt-2"
+                className="form-input mt-1.5 w-full text-xs sm:text-sm"
                 type="password"
                 value={password}
                 onChange={(event) => setPassword(event.target.value)}
@@ -735,30 +768,62 @@ export default function SuperAdminDashboard({
                 placeholder="Direct login password"
               />
             </label>
-            <label className="text-sm font-medium">
+            <label className="text-xs sm:text-sm font-medium text-slate-700">
               Role
-              <select className="form-input mt-2" value={newRole} onChange={(event) => setNewRole(event.target.value as Role)}>
+              <select className="form-input mt-1.5 w-full text-xs sm:text-sm" value={newRole} onChange={(event) => setNewRole(event.target.value as Role)}>
                 <option value="user">User</option>
                 <option value="admin">Admin</option>
                 <option value="super_admin">Super Admin</option>
               </select>
             </label>
-            <div className="col-span-full flex justify-end">
-              <button disabled={creating} className="rounded-xl bg-blue-700 px-6 py-3 text-sm font-semibold text-white hover:bg-blue-800 disabled:opacity-50">
+            <div className="col-span-full flex justify-end pt-2">
+              <button disabled={creating} className="w-full sm:w-auto rounded-xl bg-blue-700 px-6 py-2.5 sm:py-3 text-xs sm:text-sm font-semibold text-white transition hover:bg-blue-800 disabled:opacity-50">
                 {creating ? "Creating…" : "Create account"}
               </button>
             </div>
           </form>
         </section>
 
-        <section id="products" className="mt-5 overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
-          <div className="border-b border-slate-200 p-6">
-            <h2 className="text-lg font-semibold">Transcript products</h2>
-            <p className="mt-1 text-sm text-slate-500">Current catalog records from the transcript options database.</p>
+        <section id="products" className="overflow-hidden rounded-2xl sm:rounded-3xl border border-slate-200 bg-white shadow-sm">
+          <div className="border-b border-slate-200 p-4 sm:p-6">
+            <h2 className="text-base sm:text-lg font-bold text-slate-900">Transcript products</h2>
+            <p className="mt-1 text-xs sm:text-sm text-slate-500">Current catalog records from the transcript options database.</p>
           </div>
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-[700px] text-left text-sm">
-              <thead className="bg-slate-50 text-xs uppercase text-slate-500">
+
+          {/* Mobile view for products */}
+          <div className="divide-y divide-slate-100 sm:hidden">
+            {monitoring?.products.map((product) => (
+              <div key={product.value} className="p-3.5 space-y-2">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0">
+                    <p className="font-semibold text-slate-900 text-xs">{product.label}</p>
+                    <p className="text-[11px] text-slate-500 capitalize">{product.category}</p>
+                  </div>
+                  <span
+                    className={`inline-flex shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold uppercase ${
+                      product.isActive ? "bg-emerald-100 text-emerald-800" : "bg-slate-100 text-slate-600"
+                    }`}
+                  >
+                    {product.isActive ? "Active" : "Inactive"}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between text-xs pt-1 border-t border-slate-50">
+                  <span className="font-bold text-slate-900">₦{Number(product.amount).toLocaleString("en-NG")}</span>
+                  <span className="text-[11px] text-slate-600 font-medium">
+                    {product.requiresDhl ? "📦 Courier (DHL)" : "✉️ Electronic"}
+                  </span>
+                </div>
+              </div>
+            ))}
+            {!monitoring?.products?.length && (
+              <p className="p-6 text-center text-xs text-slate-500">No products configured.</p>
+            )}
+          </div>
+
+          {/* Desktop/Tablet table view for products */}
+          <div className="hidden sm:block overflow-x-auto">
+            <table className="w-full min-w-[640px] text-left text-sm">
+              <thead className="bg-slate-50 text-xs uppercase font-semibold text-slate-500">
                 <tr>
                   <th className="px-5 py-3">Product</th>
                   <th className="px-5 py-3">Category</th>
@@ -770,11 +835,19 @@ export default function SuperAdminDashboard({
               <tbody className="divide-y divide-slate-100">
                 {monitoring?.products.map((product) => (
                   <tr key={product.value}>
-                    <td className="px-5 py-3 font-medium">{product.label}</td>
-                    <td className="px-5 py-3">{product.category}</td>
-                    <td className="px-5 py-3">₦{Number(product.amount).toLocaleString("en-NG")}</td>
-                    <td className="px-5 py-3">{product.requiresDhl ? "DHL" : "Email"}</td>
-                    <td className="px-5 py-3">{product.isActive ? "Active" : "Inactive"}</td>
+                    <td className="px-5 py-3.5 font-medium text-slate-900">{product.label}</td>
+                    <td className="px-5 py-3.5 text-slate-600 capitalize">{product.category}</td>
+                    <td className="px-5 py-3.5 font-semibold text-slate-900">₦{Number(product.amount).toLocaleString("en-NG")}</td>
+                    <td className="px-5 py-3.5 text-slate-600">{product.requiresDhl ? "DHL Courier" : "Email"}</td>
+                    <td className="px-5 py-3.5">
+                      <span
+                        className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-semibold ${
+                          product.isActive ? "bg-emerald-100 text-emerald-800" : "bg-slate-100 text-slate-600"
+                        }`}
+                      >
+                        {product.isActive ? "Active" : "Inactive"}
+                      </span>
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -782,40 +855,40 @@ export default function SuperAdminDashboard({
           </div>
         </section>
 
-        <section id="activity" className="mt-5 overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
-          <div className="border-b border-slate-200 p-6">
-            <h2 className="text-lg font-semibold">Recent website activity</h2>
-            <p className="mt-1 text-sm text-slate-500">Latest recorded account and administrator events.</p>
+        <section id="activity" className="overflow-hidden rounded-2xl sm:rounded-3xl border border-slate-200 bg-white shadow-sm">
+          <div className="border-b border-slate-200 p-4 sm:p-6">
+            <h2 className="text-base sm:text-lg font-bold text-slate-900">Recent website activity</h2>
+            <p className="mt-1 text-xs sm:text-sm text-slate-500">Latest recorded account and administrator events.</p>
           </div>
           <div className="divide-y divide-slate-100">
             {monitoring?.activity.map((event) => (
-              <article key={event.id} className="flex flex-wrap items-center justify-between gap-2 px-6 py-4">
-                <div>
-                  <p className="font-medium">{event.action.replaceAll("_", " ")}</p>
-                  <p className="mt-1 text-xs text-slate-500">
+              <article key={event.id} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 sm:gap-2 p-3.5 sm:px-6 sm:py-4">
+                <div className="min-w-0">
+                  <p className="font-semibold text-xs sm:text-sm text-slate-900 capitalize">{event.action.replaceAll("_", " ")}</p>
+                  <p className="text-[11px] sm:text-xs text-slate-500 truncate">
                     {event.actorName} · {event.actorEmail}
                   </p>
                 </div>
-                <time className="text-xs text-slate-500">{new Date(event.createdAt).toLocaleString()}</time>
+                <time className="text-[10px] sm:text-xs text-slate-400 shrink-0">{new Date(event.createdAt).toLocaleString()}</time>
               </article>
             ))}
-            {!monitoring?.activity.length && <p className="p-6 text-sm text-slate-500">No activity has been recorded.</p>}
+            {!monitoring?.activity.length && <p className="p-6 text-center text-xs sm:text-sm text-slate-500">No activity has been recorded.</p>}
           </div>
         </section>
 
-        <section id="users" className="mt-5 overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
-          <div className="flex flex-col gap-3 border-b border-slate-200 p-5 sm:flex-row sm:items-center sm:justify-between sm:p-6">
+        <section id="users" className="overflow-hidden rounded-2xl sm:rounded-3xl border border-slate-200 bg-white shadow-sm">
+          <div className="flex flex-col gap-3.5 border-b border-slate-200 p-4 sm:p-6 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <h2 className="text-lg font-semibold">Users, roles &amp; permissions</h2>
-              <p className="mt-1 text-sm text-slate-500">Changes take effect immediately. Suspended accounts lose all active sessions.</p>
+              <h2 className="text-base sm:text-lg font-bold text-slate-900">Users, roles &amp; permissions</h2>
+              <p className="mt-1 text-xs sm:text-sm text-slate-500">Changes take effect immediately. Suspended accounts lose all active sessions.</p>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 w-full sm:w-auto">
               <input
                 aria-label="Search accounts"
-                placeholder="Search name, email, role"
+                placeholder="Search name, email, role..."
                 value={search}
                 onChange={(event) => setSearch(event.target.value)}
-                className="form-input text-xs sm:text-sm"
+                className="form-input text-xs sm:text-sm py-2 sm:py-1.5 flex-1 sm:w-64"
               />
               <button
                 type="button"
@@ -824,7 +897,7 @@ export default function SuperAdminDashboard({
                     setError(e instanceof Error ? e.message : "Unable to refresh"),
                   )
                 }
-                className="shrink-0 rounded-xl border border-slate-300 px-3.5 py-2 text-xs sm:text-sm font-semibold hover:bg-slate-50"
+                className="shrink-0 rounded-xl border border-slate-300 px-3.5 py-2 sm:py-1.5 text-xs sm:text-sm font-semibold hover:bg-slate-50"
               >
                 Refresh
               </button>
@@ -834,43 +907,43 @@ export default function SuperAdminDashboard({
           {/* Mobile User Cards */}
           <div className="divide-y divide-slate-100 md:hidden">
             {filteredUsers.map((user) => (
-              <div key={user.id} className={`p-4 ${!user.isActive ? "bg-slate-50/80 text-slate-500" : ""}`}>
+              <div key={user.id} className={`p-3.5 sm:p-4 ${!user.isActive ? "bg-slate-50/80 text-slate-500" : ""}`}>
                 <div className="flex items-center justify-between gap-2">
-                  <div className="flex items-center gap-3 min-w-0">
+                  <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
                     {user.avatarUrl ? (
-                      <img src={user.avatarUrl} alt={user.fullName} className="h-9 w-9 shrink-0 rounded-full border border-slate-200 object-cover" />
+                      <img src={user.avatarUrl} alt={user.fullName} className="h-8 w-8 sm:h-9 sm:w-9 shrink-0 rounded-full border border-slate-200 object-cover" />
                     ) : (
-                      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-slate-900 text-xs font-bold text-white">
+                      <span className="flex h-8 w-8 sm:h-9 sm:w-9 shrink-0 items-center justify-center rounded-full bg-slate-900 text-xs font-bold text-white">
                         {user.fullName.slice(0, 2).toUpperCase()}
                       </span>
                     )}
                     <div className="min-w-0">
-                      <p className="truncate font-semibold text-slate-900 text-sm">
+                      <p className="truncate font-semibold text-slate-900 text-xs sm:text-sm">
                         {user.fullName}
                         {user.id === currentUserId ? " · You" : ""}
                       </p>
-                      <p className="truncate text-xs text-slate-500">{user.email}</p>
+                      <p className="truncate text-[11px] sm:text-xs text-slate-500">{user.email}</p>
                     </div>
                   </div>
                   <button
                     type="button"
                     disabled={savingId === user.id || user.role === "super_admin"}
                     onClick={() => void saveUser(user, { isActive: !user.isActive })}
-                    className={`shrink-0 rounded-full px-2.5 py-1 text-[11px] font-semibold ${
-                      user.isActive ? "bg-emerald-50 text-emerald-700" : "bg-red-50 text-red-700"
+                    className={`shrink-0 rounded-full px-2.5 py-1 text-[10px] sm:text-[11px] font-semibold transition ${
+                      user.isActive ? "bg-emerald-50 text-emerald-700 hover:bg-emerald-100" : "bg-red-50 text-red-700 hover:bg-red-100"
                     }`}
                   >
                     {user.isActive ? "Active" : "Suspended"}
                   </button>
                 </div>
 
-                <div className="mt-3.5 space-y-2 border-t border-slate-100 pt-3">
+                <div className="mt-3 space-y-2 border-t border-slate-100 pt-2.5">
                   <div className="flex items-center justify-between text-xs">
                     <span className="font-medium text-slate-600">Role:</span>
                     <select
                       aria-label={`Role for ${user.email}`}
                       disabled={savingId === user.id || user.role === "super_admin"}
-                      className="rounded-lg border border-slate-300 bg-white px-2.5 py-1 text-xs"
+                      className="rounded-lg border border-slate-300 bg-white px-2.5 py-1 text-xs font-medium text-slate-800"
                       value={user.role}
                       onChange={(event) => void saveUser(user, { role: event.target.value as Role })}
                     >
@@ -881,9 +954,9 @@ export default function SuperAdminDashboard({
                   </div>
 
                   {user.role === "admin" && (
-                    <div className="mt-2 rounded-xl bg-slate-50 p-3">
-                      <p className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-slate-500">Admin Permissions</p>
-                      <div className="grid grid-cols-2 gap-2">
+                    <div className="mt-2 rounded-xl bg-slate-50 p-2.5 sm:p-3">
+                      <p className="mb-2 text-[10px] sm:text-[11px] font-semibold uppercase tracking-wider text-slate-500">Admin Permissions</p>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                         {permissionOptions.map((permission) => (
                           <label key={permission.id} className="flex items-center gap-1.5 text-xs text-slate-700">
                             <input
@@ -896,6 +969,7 @@ export default function SuperAdminDashboard({
                                   : user.permissions.filter((val) => val !== permission.id);
                                 void saveUser(user, { permissions: next });
                               }}
+                              className="rounded border-slate-300 text-blue-600 focus:ring-blue-500"
                             />
                             {permission.label}
                           </label>
@@ -904,7 +978,7 @@ export default function SuperAdminDashboard({
                     </div>
                   )}
 
-                  <div className="flex items-center justify-between text-[11px] text-slate-400 pt-1">
+                  <div className="flex items-center justify-between text-[10px] sm:text-[11px] text-slate-400 pt-1">
                     <span>Joined: {new Date(user.createdAt).toLocaleDateString()}</span>
                     <span>{savingId === user.id ? "Saving…" : "Auto-saved"}</span>
                   </div>
@@ -912,10 +986,10 @@ export default function SuperAdminDashboard({
               </div>
             ))}
             {!loading && !filteredUsers.length && (
-              <p className="p-6 text-center text-sm text-slate-500">No accounts found.</p>
+              <p className="p-6 text-center text-xs sm:text-sm text-slate-500">No accounts found.</p>
             )}
             {loading && (
-              <p className="p-6 text-center text-sm text-slate-500">Loading accounts…</p>
+              <p className="p-6 text-center text-xs sm:text-sm text-slate-500">Loading accounts…</p>
             )}
           </div>
 
@@ -1133,7 +1207,7 @@ export default function SuperAdminDashboard({
       {/* Full Transcript Application Form Detail Modal with Eye View */}
       {selectedPaymentRequest && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 p-4 sm:p-6 backdrop-blur-sm animate-in fade-in duration-200"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 p-2.5 sm:p-4 md:p-6 backdrop-blur-sm animate-in fade-in duration-200"
           onClick={(event) => {
             if (event.target === event.currentTarget) setSelectedPaymentRequest(null);
           }}
@@ -1142,18 +1216,18 @@ export default function SuperAdminDashboard({
             role="dialog"
             aria-modal="true"
             aria-labelledby="student-form-modal-title"
-            className="relative w-full max-w-3xl max-h-[90vh] overflow-y-auto rounded-3xl border border-slate-200 bg-white p-6 sm:p-8 shadow-2xl"
+            className="relative w-full max-w-3xl max-h-[92vh] flex flex-col rounded-2xl sm:rounded-3xl border border-slate-200 bg-white shadow-2xl overflow-hidden"
           >
             {/* Modal Header */}
-            <div className="flex items-start justify-between border-b border-slate-100 pb-4">
-              <div>
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-blue-50 px-3 py-1 text-xs font-bold text-blue-700 uppercase tracking-wider mb-2">
+            <div className="flex items-start justify-between border-b border-slate-100 p-4 sm:p-6 pb-3 sm:pb-4 shrink-0">
+              <div className="min-w-0 pr-2">
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-blue-50 px-2.5 py-0.5 sm:py-1 text-[10px] sm:text-xs font-bold text-blue-700 uppercase tracking-wider mb-1.5">
                   <span>📄</span> Application Details · Request #{selectedPaymentRequest.id}
                 </span>
-                <h3 id="student-form-modal-title" className="text-xl sm:text-2xl font-bold text-slate-900">
+                <h3 id="student-form-modal-title" className="text-lg sm:text-2xl font-bold text-slate-900 truncate">
                   {selectedPaymentRequest.fullName}
                 </h3>
-                <p className="text-xs sm:text-sm text-slate-500 mt-0.5">
+                <p className="text-xs sm:text-sm text-slate-500 mt-0.5 truncate">
                   Matriculation No: <span className="font-mono font-bold text-slate-800">{selectedPaymentRequest.matriculationNumber}</span>
                 </p>
               </div>
@@ -1161,22 +1235,22 @@ export default function SuperAdminDashboard({
               <button
                 type="button"
                 onClick={() => setSelectedPaymentRequest(null)}
-                className="flex h-9 w-9 items-center justify-center rounded-full text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
+                className="flex h-8 w-8 sm:h-9 sm:w-9 shrink-0 items-center justify-center rounded-full text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
                 aria-label="Close dialog"
               >
                 ✕
               </button>
             </div>
 
-            {/* Modal Body */}
-            <div className="mt-6 space-y-6">
+            {/* Modal Body (Scrollable) */}
+            <div className="overflow-y-auto p-4 sm:p-6 space-y-4 sm:space-y-6 flex-1">
               {/* Payment Status Banner */}
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-2xl bg-slate-50 border border-slate-200/80 p-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-2xl bg-slate-50 border border-slate-200/80 p-3.5 sm:p-4">
                 <div>
-                  <span className="text-xs uppercase tracking-wider text-slate-500 font-semibold">Payment Status</span>
+                  <span className="text-[10px] sm:text-xs uppercase tracking-wider text-slate-500 font-semibold">Payment Status</span>
                   <div className="flex items-center gap-2 mt-1">
                     <span
-                      className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold uppercase tracking-wider ${
+                      className={`inline-flex items-center gap-1.5 rounded-full px-2.5 sm:px-3 py-0.5 sm:py-1 text-[11px] sm:text-xs font-bold uppercase tracking-wider ${
                         selectedPaymentRequest.paymentStatus === "paid"
                           ? "bg-emerald-100 text-emerald-800"
                           : selectedPaymentRequest.paymentStatus === "pending"
@@ -1185,7 +1259,7 @@ export default function SuperAdminDashboard({
                       }`}
                     >
                       <span
-                        className={`h-2 w-2 rounded-full ${
+                        className={`h-1.5 w-1.5 sm:h-2 sm:w-2 rounded-full ${
                           selectedPaymentRequest.paymentStatus === "paid"
                             ? "bg-emerald-600"
                             : selectedPaymentRequest.paymentStatus === "pending"
@@ -1201,7 +1275,7 @@ export default function SuperAdminDashboard({
                   </div>
                 </div>
 
-                <div className="text-xs text-slate-500 sm:text-right">
+                <div className="text-[11px] sm:text-xs text-slate-500 sm:text-right">
                   <div>
                     <strong>Date &amp; Time:</strong>{" "}
                     {new Date(selectedPaymentRequest.createdAt).toLocaleString("en-GB", {
@@ -1214,7 +1288,7 @@ export default function SuperAdminDashboard({
                     })}
                   </div>
                   {selectedPaymentRequest.paymentReference && (
-                    <div className="font-mono text-slate-700 mt-1">
+                    <div className="font-mono text-slate-700 mt-1 break-all sm:break-normal">
                       <strong>Reference:</strong> {selectedPaymentRequest.paymentReference}
                     </div>
                   )}
@@ -1222,51 +1296,51 @@ export default function SuperAdminDashboard({
               </div>
 
               {/* 01: Student & Academic Details */}
-              <div className="rounded-2xl border border-slate-200 p-5">
-                <h4 className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-slate-500 border-b border-slate-100 pb-2 mb-4">
+              <div className="rounded-2xl border border-slate-200 p-3.5 sm:p-5">
+                <h4 className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-slate-500 border-b border-slate-100 pb-2 mb-3 sm:mb-4">
                   <span className="flex h-5 w-5 items-center justify-center rounded-full bg-slate-900 text-[10px] text-white">1</span>
                   Student &amp; Academic Details
                 </h4>
 
-                <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3 text-xs sm:text-sm">
-                  <div>
-                    <span className="text-slate-500 block text-xs">First Name</span>
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4 text-xs sm:text-sm">
+                  <div className="break-words">
+                    <span className="text-slate-500 block text-[11px] sm:text-xs">First Name</span>
                     <span className="font-semibold text-slate-900">{selectedPaymentRequest.firstName}</span>
                   </div>
-                  <div>
-                    <span className="text-slate-500 block text-xs">Other Name</span>
+                  <div className="break-words">
+                    <span className="text-slate-500 block text-[11px] sm:text-xs">Other Name</span>
                     <span className="font-semibold text-slate-900">{selectedPaymentRequest.otherName || "—"}</span>
                   </div>
-                  <div>
-                    <span className="text-slate-500 block text-xs">Surname</span>
+                  <div className="break-words">
+                    <span className="text-slate-500 block text-[11px] sm:text-xs">Surname</span>
                     <span className="font-semibold text-slate-900">{selectedPaymentRequest.surname}</span>
                   </div>
-                  <div>
-                    <span className="text-slate-500 block text-xs">Phone Number</span>
+                  <div className="break-words">
+                    <span className="text-slate-500 block text-[11px] sm:text-xs">Phone Number</span>
                     <span className="font-semibold text-slate-900">{selectedPaymentRequest.phoneNumber}</span>
                   </div>
-                  <div>
-                    <span className="text-slate-500 block text-xs">Email Address</span>
+                  <div className="break-words">
+                    <span className="text-slate-500 block text-[11px] sm:text-xs">Email Address</span>
                     <span className="font-semibold text-slate-900">{selectedPaymentRequest.email}</span>
                   </div>
-                  <div>
-                    <span className="text-slate-500 block text-xs">Campus</span>
+                  <div className="break-words">
+                    <span className="text-slate-500 block text-[11px] sm:text-xs">Campus</span>
                     <span className="font-semibold text-slate-900">{selectedPaymentRequest.campus}</span>
                   </div>
-                  <div>
-                    <span className="text-slate-500 block text-xs">Mode of Admission</span>
+                  <div className="break-words">
+                    <span className="text-slate-500 block text-[11px] sm:text-xs">Mode of Admission</span>
                     <span className="font-semibold text-slate-900">{selectedPaymentRequest.modeOfAdmission}</span>
                   </div>
-                  <div>
-                    <span className="text-slate-500 block text-xs">Level of Study</span>
+                  <div className="break-words">
+                    <span className="text-slate-500 block text-[11px] sm:text-xs">Level of Study</span>
                     <span className="font-semibold text-slate-900">{selectedPaymentRequest.levelOfStudy}</span>
                   </div>
-                  <div>
-                    <span className="text-slate-500 block text-xs">Document Type</span>
+                  <div className="break-words">
+                    <span className="text-slate-500 block text-[11px] sm:text-xs">Document Type</span>
                     <span className="font-semibold text-slate-900">{selectedPaymentRequest.documentType}</span>
                   </div>
-                  <div>
-                    <span className="text-slate-500 block text-xs">Graduation Period</span>
+                  <div className="break-words">
+                    <span className="text-slate-500 block text-[11px] sm:text-xs">Graduation Period</span>
                     <span className="font-semibold text-slate-900">
                       {selectedPaymentRequest.monthOfGraduation} {selectedPaymentRequest.yearOfGraduation}
                     </span>
@@ -1275,54 +1349,54 @@ export default function SuperAdminDashboard({
               </div>
 
               {/* 02: Delivery & Destination Details */}
-              <div className="rounded-2xl border border-slate-200 p-5">
-                <h4 className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-slate-500 border-b border-slate-100 pb-2 mb-4">
+              <div className="rounded-2xl border border-slate-200 p-3.5 sm:p-5">
+                <h4 className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-slate-500 border-b border-slate-100 pb-2 mb-3 sm:mb-4">
                   <span className="flex h-5 w-5 items-center justify-center rounded-full bg-slate-900 text-[10px] text-white">2</span>
                   Delivery &amp; Destination Details
                 </h4>
 
-                <div className="grid gap-4 sm:grid-cols-2 text-xs sm:text-sm">
-                  <div>
-                    <span className="text-slate-500 block text-xs">Recipient Institution / Organization</span>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 text-xs sm:text-sm">
+                  <div className="break-words sm:col-span-2">
+                    <span className="text-slate-500 block text-[11px] sm:text-xs">Recipient Institution / Organization</span>
                     <span className="font-semibold text-slate-900">{selectedPaymentRequest.recipientInstitution}</span>
                   </div>
-                  <div>
-                    <span className="text-slate-500 block text-xs">Receiver Email</span>
+                  <div className="break-words">
+                    <span className="text-slate-500 block text-[11px] sm:text-xs">Receiver Email</span>
                     <span className="font-semibold text-slate-900">{selectedPaymentRequest.receiverEmail}</span>
                   </div>
-                  <div className="sm:col-span-2">
-                    <span className="text-slate-500 block text-xs">Recipient Address</span>
-                    <span className="font-semibold text-slate-900">{selectedPaymentRequest.recipientAddress}</span>
-                  </div>
-                  <div>
-                    <span className="text-slate-500 block text-xs">Delivery Method</span>
+                  <div className="break-words">
+                    <span className="text-slate-500 block text-[11px] sm:text-xs">Delivery Method</span>
                     <span className="font-semibold text-slate-900">
                       {selectedPaymentRequest.deliveryMethod === "dhl" ? "DHL Courier (Physical)" : "Email (Electronic)"}
                     </span>
                   </div>
-                  <div>
-                    <span className="text-slate-500 block text-xs">Reference Number</span>
+                  <div className="break-words sm:col-span-2">
+                    <span className="text-slate-500 block text-[11px] sm:text-xs">Recipient Address</span>
+                    <span className="font-semibold text-slate-900">{selectedPaymentRequest.recipientAddress}</span>
+                  </div>
+                  <div className="break-words">
+                    <span className="text-slate-500 block text-[11px] sm:text-xs">Reference Number</span>
                     <span className="font-semibold text-slate-900">{selectedPaymentRequest.referenceNumber || "NILL"}</span>
                   </div>
 
                   {selectedPaymentRequest.deliveryMethod === "dhl" && (
                     <>
-                      <div>
-                        <span className="text-slate-500 block text-xs">Destination Country</span>
+                      <div className="break-words">
+                        <span className="text-slate-500 block text-[11px] sm:text-xs">Destination Country</span>
                         <span className="font-semibold text-slate-900">
                           {selectedPaymentRequest.dhlCountry} ({selectedPaymentRequest.dhlCountryCode})
                         </span>
                       </div>
-                      <div>
-                        <span className="text-slate-500 block text-xs">State / Region</span>
+                      <div className="break-words">
+                        <span className="text-slate-500 block text-[11px] sm:text-xs">State / Region</span>
                         <span className="font-semibold text-slate-900">{selectedPaymentRequest.dhlState}</span>
                       </div>
-                      <div>
-                        <span className="text-slate-500 block text-xs">Continent</span>
+                      <div className="break-words">
+                        <span className="text-slate-500 block text-[11px] sm:text-xs">Continent</span>
                         <span className="font-semibold text-slate-900">{selectedPaymentRequest.dhlContinent}</span>
                       </div>
-                      <div>
-                        <span className="text-slate-500 block text-xs">Courier Fee</span>
+                      <div className="break-words">
+                        <span className="text-slate-500 block text-[11px] sm:text-xs">Courier Fee</span>
                         <span className="font-semibold text-slate-900">
                           ₦{((selectedPaymentRequest.dhlDeliveryPriceKobo ?? 0) / 100).toLocaleString("en-NG")}
                         </span>
@@ -1334,11 +1408,11 @@ export default function SuperAdminDashboard({
             </div>
 
             {/* Modal Footer */}
-            <div className="mt-6 flex justify-end border-t border-slate-100 pt-4">
+            <div className="flex justify-end border-t border-slate-100 p-3.5 sm:p-5 shrink-0 bg-white">
               <button
                 type="button"
                 onClick={() => setSelectedPaymentRequest(null)}
-                className="rounded-xl bg-slate-900 px-5 py-2.5 text-xs sm:text-sm font-semibold text-white shadow transition hover:bg-slate-800"
+                className="w-full sm:w-auto rounded-xl bg-slate-900 px-5 py-2.5 text-xs sm:text-sm font-semibold text-white shadow transition hover:bg-slate-800"
               >
                 Close Details
               </button>

@@ -172,6 +172,9 @@ ALTER TABLE transcript_requests
 ALTER TABLE transcript_requests
   ADD COLUMN IF NOT EXISTS payment_email_sent_at TIMESTAMPTZ;
 
+ALTER TABLE transcript_requests
+  ADD COLUMN IF NOT EXISTS attachments JSONB DEFAULT '[]'::jsonb;
+
 CREATE INDEX IF NOT EXISTS transcript_requests_matriculation_number_idx
   ON transcript_requests (matriculation_number);
 

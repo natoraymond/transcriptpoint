@@ -534,6 +534,8 @@ export default function Home() {
   const [isLoadingDhlRates, setIsLoadingDhlRates] = useState(false);
   const [dhlRatesError, setDhlRatesError] = useState("");
   const [isReviewStep, setIsReviewStep] = useState(false);
+  const [attachments, setAttachments] = useState<Array<{ name: string; size: number; type: string; dataUrl: string }>>([]);
+  const [attachmentError, setAttachmentError] = useState("");
 
   useEffect(() => {
     let isMounted = true;
@@ -608,6 +610,49 @@ export default function Home() {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
+  const handleFileUpload = (e: ChangeEvent<HTMLInputElement>) => {
+    setAttachmentError("");
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    const fileList = Array.from(files);
+    const MAX_SIZE = 20 * 1024 * 1024; // 20MB limit
+
+    for (const file of fileList) {
+      const isPdf = file.type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf");
+      if (!isPdf) {
+        setAttachmentError("Only PDF documents (.pdf) are allowed.");
+        e.target.value = "";
+        return;
+      }
+      if (file.size > MAX_SIZE) {
+        setAttachmentError(`File "${file.name}" exceeds the maximum allowed size of 20MB.`);
+        e.target.value = "";
+        return;
+      }
+    }
+
+    fileList.forEach((file) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const dataUrl = reader.result as string;
+        setAttachments((prev) => {
+          if (prev.some((item) => item.name === file.name && item.size === file.size)) {
+            return prev;
+          }
+          return [...prev, { name: file.name, size: file.size, type: file.type || "application/pdf", dataUrl }];
+        });
+      };
+      reader.readAsDataURL(file);
+    });
+
+    e.target.value = "";
+  };
+
+  const removeAttachment = (indexToRemove: number) => {
+    setAttachments((prev) => prev.filter((_, idx) => idx !== indexToRemove));
+  };
+
   const handleFinalSubmit = async () => {
     setIsSubmitting(true);
     setSubmitError("");
@@ -616,7 +661,7 @@ export default function Home() {
       const response = await fetch("/api/transcript-requests", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
+        body: JSON.stringify({ ...formData, attachments }),
       });
       const result = (await response.json()) as {
         id?: string;
@@ -635,6 +680,7 @@ export default function Home() {
           "transcript-request",
           JSON.stringify({
             ...formData,
+            attachments,
             requestId: result.id,
             dhlDeliveryPriceKobo: result.dhlDeliveryPriceKobo ?? selectedDhlRate?.priceKobo ?? null,
           }),
@@ -863,16 +909,117 @@ export default function Home() {
                       </dd>
                     </div>
                   </dl>
+
+                  {/* Add Attachments Section */}
+                  <div className="mt-6 border-t border-slate-200/90 pt-5">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3">
+                      <div>
+                        <h3 className="text-sm font-semibold text-slate-800 flex items-center gap-1.5">
+                          <svg className="w-4 h-4 text-[#176a47]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
+                          </svg>
+                          Add Attachments
+                        </h3>
+                        <p className="text-[11px] sm:text-xs text-slate-500">
+                          Upload supporting documents in PDF format only (up to 20MB per file).
+                        </p>
+                      </div>
+
+                      <label className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-[#176a47]/30 bg-[#176a47]/5 px-3 py-1.5 text-xs font-semibold text-[#176a47] cursor-pointer hover:bg-[#176a47]/10 transition shrink-0 self-start sm:self-auto">
+                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                        </svg>
+                        <span>Choose PDF</span>
+                        <input
+                          type="file"
+                          accept="application/pdf,.pdf"
+                          multiple
+                          onChange={handleFileUpload}
+                          className="hidden"
+                        />
+                      </label>
+                    </div>
+
+                    {attachmentError && (
+                      <div className="mb-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-600">
+                        {attachmentError}
+                      </div>
+                    )}
+
+                    {/* Uploaded Files List */}
+                    {attachments.length > 0 ? (
+                      <div className="space-y-2">
+                        {attachments.map((att, idx) => (
+                          <div
+                            key={idx}
+                            className="flex items-center justify-between gap-3 rounded-lg border border-slate-200 bg-slate-50/70 px-3 py-2 text-xs"
+                          >
+                            <div className="flex items-center gap-2 min-w-0">
+                              <span className="shrink-0 rounded bg-red-100 px-1.5 py-0.5 text-[10px] font-bold text-red-700 uppercase">
+                                PDF
+                              </span>
+                              <span className="truncate font-medium text-slate-800" title={att.name}>
+                                {att.name}
+                              </span>
+                              <span className="shrink-0 text-[11px] text-slate-400">
+                                ({(att.size / (1024 * 1024)).toFixed(2)} MB)
+                              </span>
+                            </div>
+
+                            <button
+                              type="button"
+                              onClick={() => removeAttachment(idx)}
+                              title="Remove attachment"
+                              className="shrink-0 rounded p-1 text-slate-400 hover:bg-slate-200/60 hover:text-red-600 transition"
+                            >
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                              </svg>
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="rounded-lg border border-dashed border-slate-200 bg-slate-50/50 px-3 py-3 text-center">
+                        <p className="text-xs text-slate-400">
+                          No attachments added yet (optional).
+                        </p>
+                      </div>
+                    )}
+                  </div>
                 </div>
 
-                <div className="mt-6 flex flex-col-reverse items-center justify-between gap-3 sm:flex-row border-t border-slate-200/80 pt-5">
-                  <button
-                    type="button"
-                    onClick={() => setIsReviewStep(false)}
-                    className="inline-flex items-center justify-center rounded-lg border border-slate-300 bg-white px-5 py-2.5 text-xs font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50 sm:text-sm"
-                  >
-                    ← Back to Form
-                  </button>
+                <div className="mt-6 flex flex-col-reverse items-stretch justify-between gap-4 sm:flex-row sm:items-center border-t border-slate-200/80 pt-5">
+                  <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5">
+                    <button
+                      type="button"
+                      onClick={() => setIsReviewStep(false)}
+                      className="inline-flex items-center justify-center rounded-lg border border-slate-300 bg-white px-5 py-2.5 text-xs font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50 sm:text-sm"
+                    >
+                      ← Back to Form
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsReviewStep(false);
+                        if (formData.deliveryMethod === "dhl") {
+                          setIsDhlModalOpen(true);
+                        } else {
+                          const destElement = document.getElementById("destination-details-section");
+                          if (destElement) {
+                            destElement.scrollIntoView({ behavior: "smooth" });
+                          }
+                        }
+                      }}
+                      className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-emerald-600/30 bg-emerald-50 px-4 py-2.5 text-xs font-semibold text-emerald-800 shadow-sm transition hover:bg-emerald-100/70 sm:text-sm"
+                    >
+                      <svg className="w-4 h-4 text-emerald-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                      </svg>
+                      Add Destination
+                    </button>
+                  </div>
 
                   <div className="flex flex-col items-end gap-1 w-full sm:w-auto">
                     {submitError && <p className="text-xs font-medium text-red-600">{submitError}</p>}
@@ -1187,7 +1334,7 @@ export default function Home() {
                     </div>
                   </section>
 
-                  <section className="rounded-xl border border-white/60 bg-[#f1f3f3]/40 p-4 sm:p-5">
+                  <section id="destination-details-section" className="rounded-xl border border-white/60 bg-[#f1f3f3]/40 p-4 sm:p-5">
                     <div className="mb-4 flex items-center gap-3">
                       <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-slate-900 text-[10px] font-semibold text-white">
                         02

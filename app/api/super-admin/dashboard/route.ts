@@ -72,6 +72,7 @@ export async function GET() {
           requests.dhl_delivery_price_kobo AS "dhlDeliveryPriceKobo",
           requests.reference_number AS "referenceNumber",
           requests.receiver_email AS "receiverEmail",
+          requests.attachments,
           requests.status,
           requests.payment_status AS "paymentStatus",
           requests.payment_reference AS "paymentReference",

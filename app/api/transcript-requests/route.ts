@@ -28,6 +28,12 @@ type TranscriptRequest = Record<(typeof requiredFields)[number], string> & {
   dhlCountry?: string;
   dhlCountryCode?: string;
   dhlState?: string;
+  attachments?: Array<{
+    name: string;
+    size: number;
+    type?: string;
+    dataUrl?: string;
+  }>;
 };
 
 const continents = [
@@ -64,7 +70,7 @@ export async function GET(request: Request) {
           dhl_country_code AS "dhlCountryCode", dhl_state AS "dhlState",
           dhl_delivery_price_kobo AS "dhlDeliveryPriceKobo", reference_number AS "referenceNumber",
           receiver_email AS "receiverEmail", status, payment_status AS "paymentStatus",
-          payment_reference AS "paymentReference", created_at AS "createdAt", user_id AS "userId"
+          payment_reference AS "paymentReference", attachments, created_at AS "createdAt", user_id AS "userId"
         FROM transcript_requests
         WHERE id = ${requestId}
         LIMIT 1
@@ -266,6 +272,17 @@ export async function POST(request: Request) {
       dhlDeliveryPriceKobo = rate.priceKobo;
     }
 
+    const cleanAttachments = Array.isArray(body.attachments)
+      ? body.attachments
+          .filter((att) => att && typeof att.name === "string")
+          .map((att) => ({
+            name: String(att.name).slice(0, 200),
+            size: Number(att.size) || 0,
+            type: String(att.type || "application/pdf"),
+            dataUrl: typeof att.dataUrl === "string" ? att.dataUrl : "",
+          }))
+      : [];
+
     const [savedRequest] = await sql`
       INSERT INTO transcript_requests (
         user_id,
@@ -291,7 +308,8 @@ export async function POST(request: Request) {
         dhl_state,
         dhl_delivery_price_kobo,
         reference_number,
-        receiver_email
+        receiver_email,
+        attachments
       ) VALUES (
         ${currentUser?.id ?? null},
         ${body.campus!.trim()},
@@ -316,7 +334,8 @@ export async function POST(request: Request) {
         ${dhlState},
         ${dhlDeliveryPriceKobo},
         ${body.referenceNumber!.trim()},
-        ${body.receiverEmail!.trim()}
+        ${body.receiverEmail!.trim()},
+        ${JSON.stringify(cleanAttachments)}::jsonb
       )
       RETURNING id, dhl_delivery_price_kobo AS "dhlDeliveryPriceKobo", delivery_method AS "deliveryMethod", dhl_state AS "dhlState", dhl_country AS "dhlCountry"
     `;
